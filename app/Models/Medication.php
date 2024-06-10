@@ -9,6 +9,17 @@ class Medication extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'description',
+        'ingredient',
+        'form',
+        'usage',
+        'strength',
+        'manufacturer',
+        'price',
+    ];
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class);

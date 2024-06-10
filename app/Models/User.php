@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'organization_id',
         'contact',
+        'icno',
         'user_role',
         'status',
     ];
@@ -62,13 +63,24 @@ class User extends Authenticatable
         return $this->hasOne(HealthRecord::class);
     }
 
-    public function appointments()
+    public function appointmentsAsUser()
     {
-        return $this->hasMany(Appointment::class);
+        return $this->hasMany(Appointment::class, 'user_id');
     }
 
-    public function purchaseRecords()
+    public function appointmentsAsDoctor()
     {
-        return $this->hasMany(PurchaseRecord::class);
+        return $this->hasMany(Appointment::class, 'doctor_id');
     }
+
+    public function purchaseRecordsAsUser()
+    {
+        return $this->hasMany(PurchaseRecord::class, 'user_id');
+    }
+
+    public function purchaseRecordsAsPharmacist()
+    {
+        return $this->hasMany(PurchaseRecord::class, 'pharmacist_id');
+    }
+
 }

@@ -9,6 +9,14 @@ class HealthRecord extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'health_condition',
+        'blood_type',
+        'allergic',
+        'diseases',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

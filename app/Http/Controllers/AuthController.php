@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HealthRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -22,7 +23,7 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
-
+        //all if else strategy
         // Check if the user exists and validate the status
         if (!$user) {
             return response()->json(['error' => 'No account found.'], 401);
@@ -32,14 +33,14 @@ class AuthController extends Controller
             return response()->json(['error' => 'This account has been terminated, please contact admin for further assistance.'], 403);
         }
 
-
         if (!auth()->attempt($validator->validated())) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Invalid Password'], 401);
         }
 
         $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
+            'message' => 'Welcome back ' . $user->name,
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'Bearer',
@@ -49,9 +50,11 @@ class AuthController extends Controller
     // normal user registration function
     public function userRegister(Request $request)
     {
+        // strategy
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
+            'icno' => 'required|string|between:12,14|unique:users',
             'contact' => 'required|string|between:10,15',
             'password' => 'required|string|confirmed|min:6',
         ]);
@@ -59,19 +62,28 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
-
+        // factory
         $user = User::create([
             'organization_id' => 1,
             'name' => $request->name,
             'email' => $request->email,
+            'icno' => $request->icno,
             'contact' => $request->contact,
             'password' => Hash::make($request->password),
             'user_role' => 'user',
             'status' => 'active'
         ]);
+        // buider
+        HealthRecord::create([
+            'user_id' => $user->id,
+            'health_condition' => null,
+            'blood_type' => null,
+            'allergic' => null,
+            'diseases' => null,
+        ]);
 
         return response()->json([
-            'message' => 'User successfully registered',
+            'message' => 'Account had been successfully registered',
             'user' => $user
         ], 201);
     }

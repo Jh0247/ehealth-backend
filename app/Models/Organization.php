@@ -15,7 +15,7 @@ class Organization extends Model
         'type'
     ];
 
-    public function user()
+    public function users()
     {
         return $this->hasMany(User::class);
     }

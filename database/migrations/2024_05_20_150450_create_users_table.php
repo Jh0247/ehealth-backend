@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('profile_img')->nullable();
             $table->string('email')->unique();
             $table->string('contact')->nullable();
+            $table->string('icno')->unique()->nullable();
             $table->string('password');
             $table->string('user_role');
             $table->string('status');

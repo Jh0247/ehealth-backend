@@ -9,6 +9,17 @@ class Prescription extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'appointment_id',
+        'medication_id',
+        'dosage',
+        'frequency',
+        'duration',
+        'prescription_date',
+        'start_date',
+        'end_date'
+    ];
+
     public function appointment()
     {
         return $this->belongsTo(Appointment::class);

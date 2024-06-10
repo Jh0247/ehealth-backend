@@ -52,7 +52,8 @@ class OrganizationController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Collaboration request successfully created',
+                'message' => 'Collaboration request successfully created, please wait for 1 - 3 working 
+                                days to validate the admin account.',
                 'organization' => $organization,
                 'user' => $user
             ], 201);

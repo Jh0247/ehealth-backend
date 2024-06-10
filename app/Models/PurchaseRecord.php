@@ -9,6 +9,15 @@ class PurchaseRecord extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'pharmacist_id',
+        'medication_id',
+        'date_purchase',
+        'quantity',
+        'total_payment'
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

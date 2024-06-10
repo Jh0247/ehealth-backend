@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('doctor_id')->constrained('users');
             $table->foreignId('organization_id')->constrained('organizations');
-            $table->timestamp('appointment_date');
+            $table->timestamp('appointment_datetime');
             $table->string('type');
             $table->string('purpose')->nullable();
             $table->integer('duration')->nullable();
