@@ -10,12 +10,7 @@ class MedicationController extends Controller
 {
     public function getUserMedications(Request $request)
     {
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json(['error' => 'User not found.'], 404);
-        }
-        
+        $user = $request->user;
         $user = User::find($user->id)->load('purchaseRecordsAsUser');
 
         return response()->json([

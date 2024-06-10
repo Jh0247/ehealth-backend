@@ -2,32 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Validator;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\UserProfileUpdateValidationStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
+use App\Models\User;
 
 class UserController extends Controller
 {
+    protected $profileUpdateValidatorContext;
+
+    public function __construct()
+    {
+        $this->profileUpdateValidatorContext = new ValidatorContext();
+        $this->profileUpdateValidatorContext->addStrategy(new UserProfileUpdateValidationStrategy());
+    }
+
     public function updateProfile(Request $request)
     {
-        // Define validation rules
-        $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
-            'email' => 'string|email|max:255|unique:users,email,' . Auth::id(),
-            'contact' => 'string|max:15',
-            'profile_img' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
+        $validationResult = $this->profileUpdateValidatorContext->validate($request);
 
-        // Handle validation errors
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        if ($validationResult['errors']) {
+            return response()->json($validationResult['errors'], 422);
         }
 
         // Get the authenticated user
-        $user = Auth::user();
+        $user = $request->user;
 
         // Update user details
         // find design pattern
@@ -59,7 +60,7 @@ class UserController extends Controller
         }
 
         // Save the updated user details
-        User::find($user->id)->save();
+        $user->save();
 
         // Return a response
         return response()->json([
