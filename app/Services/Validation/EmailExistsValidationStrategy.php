@@ -12,7 +12,7 @@ class EmailExistsValidationStrategy implements ValidationStrategyInterface
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return ['errors' => ['email' => ['No account found.']]];
+            return ['errors' => 'No account found.'];
         }
 
         return ['errors' => null];

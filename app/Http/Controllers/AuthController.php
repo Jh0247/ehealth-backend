@@ -6,6 +6,10 @@ use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\EmailPasswordValidationStrategy;
 use App\Services\Validation\EmailExistsValidationStrategy;
 use App\Services\Validation\UserRegistrationValidationStrategy;
+use App\Services\UserStatusValidation\UserStatusStrategyInterface;
+use App\Services\UserStatusValidation\NoAccountFoundStrategy;
+use App\Services\UserStatusValidation\PendingAccountStrategy;
+use App\Services\UserStatusValidation\TerminatedAccountStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +20,7 @@ class AuthController extends Controller
 {
     protected $loginValidatorContext;
     protected $registrationValidatorContext;
+    protected $statusValidatorContext;
 
     public function __construct()
     {
@@ -25,32 +30,35 @@ class AuthController extends Controller
 
         $this->registrationValidatorContext = new ValidatorContext();
         $this->registrationValidatorContext->addStrategy(new UserRegistrationValidationStrategy());
+
+        $this->statusValidatorContext = [
+            new NoAccountFoundStrategy(),
+            new PendingAccountStrategy(),
+            new TerminatedAccountStrategy()
+        ];
     }
 
     // login function
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|max:100',
-            'password' => 'required|string|min:6',
-        ]);
+        // login validator context
+        $validationResult = $this->loginValidatorContext->validate($request);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 400);
         }
 
         $user = User::where('email', $request->email)->first();
-        //all if else strategy
-        // Check if the user exists and validate the status
-        if (!$user) {
-            return response()->json(['error' => 'No account found.'], 401);
-        } elseif ($user->status === 'pending') {
-            return response()->json(['error' => 'This account is currently under review, please wait for 1 to 3 working days.'], 403);
-        } elseif ($user->status === 'terminated') {
-            return response()->json(['error' => 'This account has been terminated, please contact admin for further assistance.'], 403);
+
+        // Use the strategies to validate user status
+        foreach ($this->statusValidatorContext as $strategy) {
+            $response = $strategy->validate($user);
+            if ($response !== null) {
+                return $response;
+            }
         }
 
-        if (!auth()->attempt($validator->validated())) {
+        if (!auth()->attempt($request->only('email', 'password'))) {
             return response()->json(['error' => 'Invalid Password'], 401);
         }
 
