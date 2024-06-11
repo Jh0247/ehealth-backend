@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Builders\HealthRecordBuilder;
 use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
 use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
@@ -10,11 +11,13 @@ class CollaborationRequestController extends Controller
 {
     protected $userRepository;
     protected $healthRecordRepository;
+    protected $healthRecordBuilder;
 
-    public function __construct(UserRepositoryInterface $userRepository, HealthRecordRepositoryInterface $healthRecordRepository)
+    public function __construct(UserRepositoryInterface $userRepository, HealthRecordRepositoryInterface $healthRecordRepository, HealthRecordBuilder $healthRecordBuilder)
     {
         $this->userRepository = $userRepository;
         $this->healthRecordRepository = $healthRecordRepository;
+        $this->healthRecordBuilder = $healthRecordBuilder;
     }
 
     public function approveRequest(Request $request, $userId)
@@ -35,6 +38,16 @@ class CollaborationRequestController extends Controller
             'allergic' => null,
             'diseases' => null,
         ]);
+
+        $healthRecordData = $this->healthRecordBuilder
+            ->setUserId($user->id)
+            ->setHealthCondition(null)
+            ->setBloodType(null)
+            ->setAllergic(null)
+            ->setDiseases(null)
+            ->build();
+
+        $this->healthRecordRepository->create($healthRecordData);
 
         return response()->json(['message' => 'Collaboration request approved successfully', 'user' => $user], 200);
     }

@@ -15,9 +15,6 @@ class HealthRecordController extends Controller
         $this->healthRecordRepository = $healthRecordRepository;
     }
 
-
-    
-
     public function getUserHealthRecord(Request $request)
     {
         $user = $request->user;

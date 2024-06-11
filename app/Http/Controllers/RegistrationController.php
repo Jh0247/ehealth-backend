@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Builders\HealthRecordBuilder;
 use App\Factories\AdminUserFactory;
 use App\Factories\NormalUserFactory;
 use App\Factories\StaffUserFactory;
@@ -9,15 +10,20 @@ use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserRegistrationValidationStrategy;
 use Illuminate\Http\Request;
 use App\Models\HealthRecord;
+use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
 
 class RegistrationController extends Controller
 {
     protected $registrationValidatorContext;
+    protected $healthRecordRepository;
+    protected $healthRecordBuilder;
 
-    public function __construct()
+    public function __construct(HealthRecordRepositoryInterface $healthRecordRepository, HealthRecordBuilder $healthRecordBuilder)
     {
         $this->registrationValidatorContext = new ValidatorContext();
         $this->registrationValidatorContext->addStrategy(new UserRegistrationValidationStrategy());
+        $this->healthRecordRepository = $healthRecordRepository;
+        $this->healthRecordBuilder = $healthRecordBuilder;
     }
 
     // Regular user registration
@@ -32,13 +38,15 @@ class RegistrationController extends Controller
         $userFactory = new NormalUserFactory();
         $user = $userFactory->createUser($request->all());
 
-        HealthRecord::create([
-            'user_id' => $user->id,
-            'health_condition' => null,
-            'blood_type' => null,
-            'allergic' => null,
-            'diseases' => null,
-        ]);
+        $healthRecordData = $this->healthRecordBuilder
+            ->setUserId($user->id)
+            ->setHealthCondition(null)
+            ->setBloodType(null)
+            ->setAllergic(null)
+            ->setDiseases(null)
+            ->build();
+
+        $this->healthRecordRepository->create($healthRecordData);
 
         return response()->json([
             'message' => 'Account has been successfully registered',
@@ -76,13 +84,15 @@ class RegistrationController extends Controller
         $staffFactory = new StaffUserFactory();
         $staff = $staffFactory->createUser($request->all());
 
-        HealthRecord::create([
-            'user_id' => $staff->id,
-            'health_condition' => null,
-            'blood_type' => null,
-            'allergic' => null,
-            'diseases' => null,
-        ]);
+        $healthRecordData = $this->healthRecordBuilder
+            ->setUserId($staff->id)
+            ->setHealthCondition(null)
+            ->setBloodType(null)
+            ->setAllergic(null)
+            ->setDiseases(null)
+            ->build();
+
+        $this->healthRecordRepository->create($healthRecordData);
 
         return response()->json([
             'message' => 'Staff account has been successfully created',
