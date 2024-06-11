@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\AppointmentController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthRecordController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\CollaborationRequestController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +26,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/user-register', [AuthController::class, 'userRegister']);
+Route::post('/user-register', [RegistrationController::class, 'registerUser']);
+Route::post('/admin-register', [RegistrationController::class, 'registerAdmin']);
+Route::post('/staff-register', [RegistrationController::class, 'registerStaff']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/collaboration-request', [OrganizationController::class, 'createCollaborationRequest']);
 
@@ -35,4 +39,7 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
 });
 
-//for admin only usage, need to add guard
+Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {
+    Route::post('/collaboration-request/approve/{userId}', [CollaborationRequestController::class, 'approveRequest']);
+    Route::post('/collaboration-request/decline/{userId}', [CollaborationRequestController::class, 'declineRequest']);
+});

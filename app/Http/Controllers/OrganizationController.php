@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Factories\StaffUserFactory;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\OrganizationCreationValidationStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Organization;
-use App\Models\User;
 
 class OrganizationController extends Controller
 {
@@ -39,16 +38,21 @@ class OrganizationController extends Controller
                 'type' => $request->organization_type,
             ]);
 
-            // Insert into users table
-            $user = User::create([
+            // Prepare admin data
+            $adminData = [
                 'organization_id' => $organization->id,
                 'name' => $request->admin_name,
                 'email' => $request->admin_email,
                 'contact' => $request->admin_contact,
+                'icno' => $request->admin_icno,
                 'password' => Hash::make($request->password),
                 'user_role' => 'admin',
                 'status' => 'pending'
-            ]);
+            ];
+
+            // Use AdminUserFactory to create the admin user
+            $staffFactory = new StaffUserFactory();
+            $user = $staffFactory->createUser($adminData);
 
             DB::commit();
 

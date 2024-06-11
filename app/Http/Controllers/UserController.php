@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 
 class UserController extends Controller
 {
@@ -56,7 +54,7 @@ class UserController extends Controller
             Storage::url($imagePath);
             
            // string builder to add bucket name to url
-            $user->profile_img = env('APP_URL').':9000/ehealth/'.$imagePath;
+            $user->profile_img = 'http://localhost:9000/ehealth/'.$imagePath;
         }
 
         // Save the updated user details

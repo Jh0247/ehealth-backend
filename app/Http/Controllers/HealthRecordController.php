@@ -3,10 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
 use Illuminate\Http\Request;
 
 class HealthRecordController extends Controller
 {
+    protected $healthRecordRepository;
+
+    public function __construct(HealthRecordRepositoryInterface $healthRecordRepository)
+    {
+        $this->healthRecordRepository = $healthRecordRepository;
+    }
+
+
+    
+
     public function getUserHealthRecord(Request $request)
     {
         $user = $request->user;

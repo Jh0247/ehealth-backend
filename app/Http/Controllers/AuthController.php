@@ -5,31 +5,40 @@ namespace App\Http\Controllers;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\EmailPasswordValidationStrategy;
 use App\Services\Validation\EmailExistsValidationStrategy;
-use App\Services\Validation\UserRegistrationValidationStrategy;
-use App\Services\UserStatusValidation\UserStatusStrategyInterface;
 use App\Services\UserStatusValidation\NoAccountFoundStrategy;
 use App\Services\UserStatusValidation\PendingAccountStrategy;
 use App\Services\UserStatusValidation\TerminatedAccountStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\HealthRecord;
 
+/**
+ * Class AuthController
+ * @package App\Http\Controllers
+ *
+ * This controller handles authentication operations.
+ */
 class AuthController extends Controller
 {
+    /**
+     * @var ValidatorContext The context for login validation strategies.
+     */
     protected $loginValidatorContext;
-    protected $registrationValidatorContext;
+
+    /**
+     * @var array The array of user status validation strategies.
+     */
     protected $statusValidatorContext;
 
+    /**
+     * AuthController constructor.
+     *
+     * Initializes the validation strategies for login and user status.
+     */
     public function __construct()
     {
         $this->loginValidatorContext = new ValidatorContext();
         $this->loginValidatorContext->addStrategy(new EmailPasswordValidationStrategy());
         $this->loginValidatorContext->addStrategy(new EmailExistsValidationStrategy());
-
-        $this->registrationValidatorContext = new ValidatorContext();
-        $this->registrationValidatorContext->addStrategy(new UserRegistrationValidationStrategy());
 
         $this->statusValidatorContext = [
             new NoAccountFoundStrategy(),
@@ -38,19 +47,29 @@ class AuthController extends Controller
         ];
     }
 
-    // login function
+    /**
+     * Handles user login.
+     *
+     * @param Request $request The HTTP request object containing login credentials.
+     * @return \Illuminate\Http\JsonResponse The HTTP response object containing the result of the login attempt.
+     *
+     * This function validates the user's credentials and status using predefined strategies.
+     * If validation passes, it attempts to log in the user and returns an authentication token.
+     */
     public function login(Request $request)
     {
-        // login validator context
+        // Perform login validation
         $validationResult = $this->loginValidatorContext->validate($request);
 
+        // Return validation errors if any
         if ($validationResult['errors']) {
             return response()->json(['error' => $validationResult['errors']], 400);
         }
 
+        // Retrieve the user by email
         $user = User::where('email', $request->email)->first();
 
-        // Use the strategies to validate user status
+        // Validate user status using predefined strategies
         foreach ($this->statusValidatorContext as $strategy) {
             $response = $strategy->validate($user);
             if ($response !== null) {
@@ -58,12 +77,15 @@ class AuthController extends Controller
             }
         }
 
+        // Attempt to authenticate the user
         if (!auth()->attempt($request->only('email', 'password'))) {
             return response()->json(['error' => 'Invalid Password'], 401);
         }
 
+        // Create authentication token for the user
         $token = $user->createToken('authToken')->plainTextToken;
 
+        // Return success response with the authentication token
         return response()->json([
             'message' => 'Welcome back ' . $user->name,
             'user' => $user,
@@ -71,40 +93,4 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
         ]);
     }
-
-    // normal user registration function
-    public function userRegister(Request $request)
-    {
-        $validationResult = $this->registrationValidatorContext->validate($request);
-
-        if ($validationResult['errors']) {
-            return response()->json($validationResult['errors']->toJson(), 400);
-        }
-
-        // factory
-        $user = User::create([
-            'organization_id' => 1,
-            'name' => $request->name,
-            'email' => $request->email,
-            'icno' => $request->icno,
-            'contact' => $request->contact,
-            'password' => Hash::make($request->password),
-            'user_role' => 'user',
-            'status' => 'active'
-        ]);
-        // buider
-        HealthRecord::create([
-            'user_id' => $user->id,
-            'health_condition' => null,
-            'blood_type' => null,
-            'allergic' => null,
-            'diseases' => null,
-        ]);
-
-        return response()->json([
-            'message' => 'Account had been successfully registered',
-            'user' => $user
-        ], 201);
-    }
-
 }
