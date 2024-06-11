@@ -19,7 +19,8 @@ class UserProfileUpdateValidationStrategy implements ValidationStrategyInterface
         ]);
 
         if ($validator->fails()) {
-            return ['errors' => $validator->errors()];
+            $errors = $validator->errors()->all();
+            return ['errors' => implode(' ', $errors)];
         }
 
         return ['errors' => null];

@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Builders\HealthRecordBuilder;
-use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
+use App\Facades\HealthRecordFacade;
 use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
 
 class CollaborationRequestController extends Controller
 {
     protected $userRepository;
+
+    protected $healthRecordFacade;
+
     protected $healthRecordRepository;
     protected $healthRecordBuilder;
 
-    public function __construct(UserRepositoryInterface $userRepository, HealthRecordRepositoryInterface $healthRecordRepository, HealthRecordBuilder $healthRecordBuilder)
+    public function __construct(UserRepositoryInterface $userRepository, HealthRecordFacade $healthRecordFacade)
     {
         $this->userRepository = $userRepository;
-        $this->healthRecordRepository = $healthRecordRepository;
-        $this->healthRecordBuilder = $healthRecordBuilder;
+        $this->healthRecordFacade = $healthRecordFacade;
     }
 
     public function approveRequest(Request $request, $userId)
@@ -31,23 +32,8 @@ class CollaborationRequestController extends Controller
         $user->status = 'active';
         $this->userRepository->update($userId, ['status' => 'active']);
 
-        $this->healthRecordRepository->create([
-            'user_id' => $user->id,
-            'health_condition' => null,
-            'blood_type' => null,
-            'allergic' => null,
-            'diseases' => null,
-        ]);
-
-        $healthRecordData = $this->healthRecordBuilder
-            ->setUserId($user->id)
-            ->setHealthCondition(null)
-            ->setBloodType(null)
-            ->setAllergic(null)
-            ->setDiseases(null)
-            ->build();
-
-        $this->healthRecordRepository->create($healthRecordData);
+        // Facade create health record
+        $this->healthRecordFacade->createHealthRecordForUser($user->id);
 
         return response()->json(['message' => 'Collaboration request approved successfully', 'user' => $user], 200);
     }

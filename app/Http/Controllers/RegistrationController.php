@@ -2,28 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Builders\HealthRecordBuilder;
+use App\Facades\HealthRecordFacade;
+use App\Facades\UserFacade;
 use App\Factories\AdminUserFactory;
 use App\Factories\NormalUserFactory;
 use App\Factories\StaffUserFactory;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserRegistrationValidationStrategy;
 use Illuminate\Http\Request;
-use App\Models\HealthRecord;
-use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
 
 class RegistrationController extends Controller
 {
     protected $registrationValidatorContext;
-    protected $healthRecordRepository;
-    protected $healthRecordBuilder;
+    protected $userFacade;
+    protected $healthRecordFacade;
 
-    public function __construct(HealthRecordRepositoryInterface $healthRecordRepository, HealthRecordBuilder $healthRecordBuilder)
+    public function __construct(UserFacade $userFacade, HealthRecordFacade $healthRecordFacade)
     {
         $this->registrationValidatorContext = new ValidatorContext();
         $this->registrationValidatorContext->addStrategy(new UserRegistrationValidationStrategy());
-        $this->healthRecordRepository = $healthRecordRepository;
-        $this->healthRecordBuilder = $healthRecordBuilder;
+        $this->userFacade = $userFacade;
+        $this->healthRecordFacade = $healthRecordFacade;
     }
 
     // Regular user registration
@@ -35,18 +34,12 @@ class RegistrationController extends Controller
             return response()->json($validationResult['errors']->toJson(), 400);
         }
 
-        $userFactory = new NormalUserFactory();
-        $user = $userFactory->createUser($request->all());
+        // Facade create normal user
+        $data = array_merge($request->all(), ['organization_id' => 1]);
+        $user = $this->userFacade->createUser($data, 'user');
 
-        $healthRecordData = $this->healthRecordBuilder
-            ->setUserId($user->id)
-            ->setHealthCondition(null)
-            ->setBloodType(null)
-            ->setAllergic(null)
-            ->setDiseases(null)
-            ->build();
-
-        $this->healthRecordRepository->create($healthRecordData);
+        // Facade create health record
+        $this->healthRecordFacade->createHealthRecordForUser($user->id);
 
         return response()->json([
             'message' => 'Account has been successfully registered',
@@ -63,8 +56,9 @@ class RegistrationController extends Controller
             return response()->json($validationResult['errors']->toJson(), 400);
         }
 
-        $adminFactory = new AdminUserFactory();
-        $admin = $adminFactory->createUser($request->all());
+        // Facade create ehealth admin
+        $data = array_merge($request->all(), ['organization_id' => 1]);
+        $admin = $this->userFacade->createUser($data, 'admin');
 
         return response()->json([
             'message' => 'Admin account has been successfully created',
@@ -81,18 +75,10 @@ class RegistrationController extends Controller
             return response()->json($validationResult['errors']->toJson(), 400);
         }
 
-        $staffFactory = new StaffUserFactory();
-        $staff = $staffFactory->createUser($request->all());
+        $staff = $this->userFacade->createUser($request->all(), 'staff');
 
-        $healthRecordData = $this->healthRecordBuilder
-            ->setUserId($staff->id)
-            ->setHealthCondition(null)
-            ->setBloodType(null)
-            ->setAllergic(null)
-            ->setDiseases(null)
-            ->build();
-
-        $this->healthRecordRepository->create($healthRecordData);
+        // Facade create health record
+        $this->healthRecordFacade->createHealthRecordForUser($staff->id);
 
         return response()->json([
             'message' => 'Staff account has been successfully created',

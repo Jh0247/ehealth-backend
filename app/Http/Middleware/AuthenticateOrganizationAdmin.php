@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class AuthenticateAdmin
+class AuthenticateOrganizationAdmin
 {
     /**
      * Handle an incoming request.
@@ -22,8 +22,8 @@ class AuthenticateAdmin
             return response()->json(['error' => 'User not authenticated.'], 401);
         }
 
-        if ($user->user_role !== 'admin' || $user->organization_id !== 1) {
-            return response()->json(['error' => 'Unauthorized access. E-Health Admins only.'], 403);
+        if ($user->user_role !== 'admin' || $user->organization_id == 1) {
+            return response()->json(['error' => 'Unauthorized access. Admins only.'], 403);
         }
 
         return $next($request);

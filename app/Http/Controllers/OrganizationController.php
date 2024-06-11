@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Facades\UserFacade;
 use App\Factories\StaffUserFactory;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\OrganizationCreationValidationStrategy;
@@ -13,11 +14,13 @@ use App\Models\Organization;
 class OrganizationController extends Controller
 {
     protected $organizationCreationValidatorContext;
+    protected $userFacade;
 
-    public function __construct()
+    public function __construct(UserFacade $userFacade)
     {
         $this->organizationCreationValidatorContext = new ValidatorContext();
         $this->organizationCreationValidatorContext->addStrategy(new OrganizationCreationValidationStrategy());
+        $this->userFacade = $userFacade;
     }
 
     // company collaboration and create their admin account
@@ -45,14 +48,13 @@ class OrganizationController extends Controller
                 'email' => $request->admin_email,
                 'contact' => $request->admin_contact,
                 'icno' => $request->admin_icno,
-                'password' => Hash::make($request->password),
+                'password' => $request->password,
                 'user_role' => 'admin',
                 'status' => 'pending'
             ];
 
-            // Use AdminUserFactory to create the admin user
-            $staffFactory = new StaffUserFactory();
-            $user = $staffFactory->createUser($adminData);
+            // Use UserFacade to create the admin user
+            $user = $this->userFacade->createUser($adminData, 'admin');
 
             DB::commit();
 

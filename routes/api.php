@@ -27,8 +27,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/user-register', [RegistrationController::class, 'registerUser']);
-Route::post('/admin-register', [RegistrationController::class, 'registerAdmin']);
-Route::post('/staff-register', [RegistrationController::class, 'registerStaff']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/collaboration-request', [OrganizationController::class, 'createCollaborationRequest']);
 
@@ -40,6 +38,11 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {
+    Route::post('/admin-register', [RegistrationController::class, 'registerAdmin']);
     Route::post('/collaboration-request/approve/{userId}', [CollaborationRequestController::class, 'approveRequest']);
     Route::post('/collaboration-request/decline/{userId}', [CollaborationRequestController::class, 'declineRequest']);
+});
+
+Route::middleware(['auth:sanctum', 'auth.organization-admin'])->group(function () {
+    Route::post('/staff-register', [RegistrationController::class, 'registerStaff']);
 });
