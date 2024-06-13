@@ -13,8 +13,6 @@ class MedicationController extends Controller
         $user = $request->user;
         $user = User::find($user->id)->load('purchaseRecordsAsUser');
 
-        return response()->json([
-            'medications' => $user->purchaseRecordsAsUser,
-        ]);
+        return response()->json($user->purchaseRecordsAsUser);
     }
 }

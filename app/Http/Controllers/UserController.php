@@ -29,7 +29,6 @@ class UserController extends Controller
         $user = $request->user;
 
         // Update user details
-        // find design pattern
         if ($request->has('name')) {
             $user->name = $request->name;
         }

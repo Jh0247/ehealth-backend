@@ -25,8 +25,6 @@ class HealthRecordController extends Controller
 
         $user = User::find($user->id)->load('healthRecord');
 
-        return response()->json([
-            'health-record' => $user->healthRecord,
-        ]);
+        return response()->json($user->healthRecord);
     }
 }

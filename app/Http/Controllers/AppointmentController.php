@@ -12,8 +12,6 @@ class AppointmentController extends Controller
         $user = $request->user;
         $user = User::find($user->id)->load('appointmentsAsUser');
 
-        return response()->json([
-            'appointments' => $user->appointmentsAsUser,
-        ]);
+        return response()->json($user->appointmentsAsUser);
     }
 }
