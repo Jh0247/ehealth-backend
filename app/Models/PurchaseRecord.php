@@ -9,6 +9,8 @@ class PurchaseRecord extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'user_id',
         'pharmacist_id',

@@ -5,22 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class HealthRecord extends Model
+class Location extends Model
 {
     use HasFactory;
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'user_id',
-        'health_condition',
-        'blood_type',
-        'allergic',
-        'diseases',
+        'organization_id',
+        'address',
+        'latitude',
+        'longitude',
     ];
 
-    public function user()
+    public function organization()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Organization::class);
     }
 }

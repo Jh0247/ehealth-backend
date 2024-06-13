@@ -30,19 +30,21 @@ Route::post('/user-register', [RegistrationController::class, 'registerUser']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/collaboration-request', [OrganizationController::class, 'createCollaborationRequest']);
 
+// Route for authenticated users
 Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/user-health-record', [HealthRecordController::class, 'getUserHealthRecord']);
     Route::get('/user-appointments', [AppointmentController::class, 'getUserAppointments']);
     Route::get('/user-medications', [MedicationController::class, 'getUserMedications']);
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
+    Route::get('/organization/{id}', [OrganizationController::class, 'findOrganizationDetails']);
 });
-
+// Route for e-health admin
 Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {
     Route::post('/admin-register', [RegistrationController::class, 'registerAdmin']);
     Route::post('/collaboration-request/approve/{userId}', [CollaborationRequestController::class, 'approveRequest']);
     Route::post('/collaboration-request/decline/{userId}', [CollaborationRequestController::class, 'declineRequest']);
 });
-
+// Route for collaborated organization admin
 Route::middleware(['auth:sanctum', 'auth.organization-admin'])->group(function () {
     Route::post('/staff-register', [RegistrationController::class, 'registerStaff']);
 });

@@ -73,4 +73,16 @@ class OrganizationController extends Controller
             ], 500);
         }
     }
+
+    // Display organization details with locations
+    public function findOrganizationDetails($id)
+    {
+        $organization = Organization::with('locations')->find($id);
+
+        if (!$organization) {
+            return response()->json(['error' => 'Organization not found'], 404);
+        }
+
+        return response()->json($organization);
+    }
 }

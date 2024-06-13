@@ -9,6 +9,8 @@ class Organization extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id';
+
     protected $fillable = [
         'name',
         'code',
@@ -23,5 +25,10 @@ class Organization extends Model
     public function appointments()
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    public function locations()
+    {
+        return $this->hasMany(Location::class);
     }
 }
