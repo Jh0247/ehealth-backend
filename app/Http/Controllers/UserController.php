@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
 use Illuminate\Http\Request;
@@ -64,5 +65,14 @@ class UserController extends Controller
             'message' => 'Profile updated successfully',
             'user' => $user
         ]);
+    }
+
+    public function getUsersByRoleAndOrganization($organizationId, $role)
+    {
+        $users = User::where('organization_id', $organizationId)
+            ->where('user_role', $role)
+            ->get();
+
+        return response()->json($users);
     }
 }

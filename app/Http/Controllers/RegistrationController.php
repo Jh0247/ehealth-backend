@@ -31,7 +31,7 @@ class RegistrationController extends Controller
         $validationResult = $this->registrationValidatorContext->validate($request);
 
         if ($validationResult['errors']) {
-            return response()->json($validationResult['errors']->toJson(), 400);
+            return response()->json(['error' => $validationResult['errors']], 400);
         }
 
         // Facade create normal user
@@ -53,7 +53,7 @@ class RegistrationController extends Controller
         $validationResult = $this->registrationValidatorContext->validate($request);
 
         if ($validationResult['errors']) {
-            return response()->json($validationResult['errors']->toJson(), 400);
+            return response()->json(['error' => $validationResult['errors']], 400);
         }
 
         // Facade create ehealth admin
@@ -72,7 +72,7 @@ class RegistrationController extends Controller
         $validationResult = $this->registrationValidatorContext->validate($request);
 
         if ($validationResult['errors']) {
-            return response()->json($validationResult['errors']->toJson(), 400);
+            return response()->json(['error' => $validationResult['errors']], 400);
         }
 
         $staff = $this->userFacade->createUser($request->all(), 'staff');

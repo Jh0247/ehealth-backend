@@ -29,7 +29,7 @@ class OrganizationController extends Controller
         $validationResult = $this->organizationCreationValidatorContext->validate($request);
 
         if ($validationResult['errors']) {
-            return response()->json($validationResult['errors']->toJson(), 400);
+            return response()->json(['error' => $validationResult['errors']], 400);
         }
 
         DB::beginTransaction();
@@ -52,6 +52,17 @@ class OrganizationController extends Controller
                 'user_role' => 'admin',
                 'status' => 'pending'
             ];
+
+            // Insert into locations table
+            if ($request->has('locations') && is_array($request->locations)) {
+                foreach ($request->locations as $locationData) {
+                    $organization->locations()->create([
+                        'address' => $locationData['address'],
+                        'latitude' => $locationData['latitude'],
+                        'longitude' => $locationData['longitude'],
+                    ]);
+                }
+            }
 
             // Use UserFacade to create the admin user
             $user = $this->userFacade->createUser($adminData, 'admin');
@@ -84,5 +95,13 @@ class OrganizationController extends Controller
         }
 
         return response()->json($organization);
+    }
+
+    // Get all organizations, except for id 1
+    public function getAllOrganizations()
+    {
+        $organizations = Organization::where('id', '!=', 1)->get();
+
+        return response()->json($organizations);
     }
 }

@@ -37,6 +37,11 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/user-medications', [MedicationController::class, 'getUserMedications']);
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
     Route::get('/organization/{id}', [OrganizationController::class, 'findOrganizationDetails']);
+    Route::get('/organization-list', [OrganizationController::class, 'getAllOrganizations']);
+    Route::get('/organization/{organizationId}/users/{role}', [UserController::class, 'getUsersByRoleAndOrganization']);
+    Route::post('/book-appointment', [AppointmentController::class, 'bookAppointment']);
+    Route::get('/appointment/{id}', [AppointmentController::class, 'getAppointmentDetails']);
+    Route::delete('/appointment/{id}', [AppointmentController::class, 'deleteAppointment']);
 });
 // Route for e-health admin
 Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {
