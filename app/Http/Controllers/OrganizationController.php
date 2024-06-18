@@ -104,4 +104,33 @@ class OrganizationController extends Controller
 
         return response()->json($organizations);
     }
+
+    public function getOrganizationStats($id)
+    {
+        // Find the organization
+        $organization = Organization::find($id);
+
+        if (!$organization) {
+            return response()->json(['error' => 'Organization not found'], 404);
+        }
+
+        // Number of staff in the organization
+        $numStaffs = $organization->users()->count();
+
+        // Number of appointments in the organization
+        $numAppointments = $organization->appointments()->count();
+
+        // Number of blog posts created by users in the organization
+        $numBlogposts = 0;
+        foreach ($organization->users as $user) {
+            $numBlogposts += $user->blogposts()->count();
+        }
+
+        // Return the statistics
+        return response()->json([
+            'num_staffs' => $numStaffs,
+            'num_appointments' => $numAppointments,
+            'num_blogposts' => $numBlogposts
+        ]);
+    }
 }

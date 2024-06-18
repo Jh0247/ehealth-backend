@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('content');
             $table->string('banner')->nullable();
+            $table->string('status');
             $table->timestamps();
             $table->engine = 'InnoDB';
         });

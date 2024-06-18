@@ -14,11 +14,15 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
-        // Load user's appointments and order by appointment_datetime
-        $appointments = $user->appointmentsAsUser()->orderBy('appointment_datetime', 'desc')->get();
+        if ($user->user_role === 'doctor') {
+            $appointments = $user->appointmentsAsDoctor()->orderBy('appointment_datetime', 'desc')->get();
+        } else {
+            $appointments = $user->appointmentsAsUser()->orderBy('appointment_datetime', 'desc')->get();
+        }
 
         return response()->json($appointments);
     }
+
 
     public function getAppointmentDetails($id)
     {
@@ -82,5 +86,32 @@ class AppointmentController extends Controller
         $appointment->delete();
 
         return response()->json(['message' => 'Appointment deleted successfully'], 200);
+    }
+
+    public function getPatientsByDoctorAppointments(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->user_role !== 'doctor') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $appointments = Appointment::where('doctor_id', $user->id)
+            ->with('user')
+            ->get();
+
+        $patients = $appointments->pluck('user')->unique('id');
+
+        return response()->json($patients->values());
+    }
+
+    public function getAppointmentsByOrganization(Request $request, $organizationId)
+    {
+        $perPage = $request->input('per_page', 10);
+        $appointments = Appointment::where('organization_id', $organizationId)
+            ->orderBy('appointment_datetime', 'desc')
+            ->paginate($perPage);
+
+        return response()->json($appointments);
     }
 }

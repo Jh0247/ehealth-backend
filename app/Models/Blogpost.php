@@ -16,6 +16,7 @@ class Blogpost extends Model
         'title',
         'content',
         'banner',
+        'status',
     ];
 
     public function user()

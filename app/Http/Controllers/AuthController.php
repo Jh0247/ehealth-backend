@@ -82,6 +82,8 @@ class AuthController extends Controller
             return response()->json(['error' => 'Invalid Password'], 401);
         }
 
+        $user->load('organization');
+
         // Create authentication token for the user
         $token = $user->createToken('authToken')->plainTextToken;
 

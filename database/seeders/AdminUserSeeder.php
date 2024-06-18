@@ -19,7 +19,7 @@ class AdminUserSeeder extends Seeder
             'name' => 'E-Health Admin',
             'email' => 'admin@sample.com',
             'password' => Hash::make('password'),
-            'user_role' => 'admin',
+            'user_role' => 'e-admin',
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now(),

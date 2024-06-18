@@ -25,6 +25,41 @@ class HealthRecordController extends Controller
 
         $user = User::find($user->id)->load('healthRecord');
 
-        return response()->json($user->healthRecord);
+        $response = [
+            'profile_img' => $user->profile_img,
+            'name' => $user->name,
+            'icno' => $user->icno,
+            'email' => $user->email,
+            'contact' => $user->contact,
+            'health_record' => $user->healthRecord
+        ];
+    
+        return response()->json($response);
+    }
+
+    public function getSpecificUserHealthRecord($userId)
+    {
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $user->load('healthRecord');
+
+        if (!$user->healthRecord) {
+            return response()->json(['error' => 'Health record not found for the specified user.'], 404);
+        }
+
+        $response = [
+            'profile_img' => $user->profile_img,
+            'name' => $user->name,
+            'icno' => $user->icno,
+            'email' => $user->email,
+            'contact' => $user->contact,
+            'health_record' => $user->healthRecord
+        ];
+    
+        return response()->json($response);
     }
 }

@@ -60,6 +60,8 @@ class UserController extends Controller
         // Save the updated user details
         $user->save();
 
+        $user->load('organization');
+
         // Return a response
         return response()->json([
             'message' => 'Profile updated successfully',
