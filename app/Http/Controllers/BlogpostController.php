@@ -173,4 +173,19 @@ class BlogpostController extends Controller
             'blogpost' => $blogpost
         ]);
     }
+
+    public function getBlogpostsByStatus(Request $request, $status)
+    {
+        $blogposts = Blogpost::where('status', $status)->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json($blogposts);
+    }
+
+    public function getUserBlogposts(Request $request)
+    {
+        $user = $request->user();
+        $blogposts = $user->blogposts()->orderBy('created_at', 'desc')->paginate(10);
+
+        return response()->json($blogposts);
+    }
 }

@@ -38,9 +38,11 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/user-appointments', [AppointmentController::class, 'getUserAppointments']);
     Route::get('/user-medications', [MedicationController::class, 'getUserMedications']);
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
+    Route::put('/user/{id}/status', [UserController::class, 'updateUserStatus']);
     Route::get('/organization/{id}', [OrganizationController::class, 'findOrganizationDetails']);
     Route::get('/organization-list', [OrganizationController::class, 'getAllOrganizations']);
     Route::get('/organization/{organizationId}/users/{role}', [UserController::class, 'getUsersByRoleAndOrganization']);
+    Route::get('/organization/{organizationId}/users', [UserController::class, 'getUsersByOrganization']);
     Route::post('/book-appointment', [AppointmentController::class, 'bookAppointment']);
     Route::get('/appointment/{id}', [AppointmentController::class, 'getAppointmentDetails']);
     Route::delete('/appointment/{id}', [AppointmentController::class, 'deleteAppointment']);
@@ -56,6 +58,8 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/blogposts/search/{name}', [BlogpostController::class, 'searchBlogpostByName']);
     Route::get('/blogposts/{id}', [BlogpostController::class, 'getSpecificBlogpost']);
     Route::post('/blogposts/{id}', [BlogpostController::class, 'updateBlogpost']);
+    Route::get('/blogposts/status/{status}', [BlogpostController::class, 'getBlogpostsByStatus']);
+    Route::get('/user/blogposts', [BlogpostController::class, 'getUserBlogposts']);
 });
 // Route for e-health admin
 Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {

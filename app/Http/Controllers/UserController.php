@@ -7,6 +7,7 @@ use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -76,5 +77,35 @@ class UserController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+
+    public function getUsersByOrganization($organizationId)
+    {
+        $users = User::where('organization_id', $organizationId)->get();
+
+        return response()->json($users);
+    }
+
+    public function updateUserStatus(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|string|in:pending,active,terminated',
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors()->all();
+            return response()->json(['errors' => implode(' ', $errors)], 422);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        $user->status = $request->status;
+        $user->save();
+
+        return response()->json(['message' => 'User status updated successfully']);
     }
 }

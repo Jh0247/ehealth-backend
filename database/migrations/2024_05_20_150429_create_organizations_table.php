@@ -16,6 +16,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->unique();
             $table->string('type');
+            $table->string('address');
+            $table->decimal('latitude', 10, 7);
+            $table->decimal('longitude', 10, 7);
             $table->timestamps();
             $table->engine = 'InnoDB';
         });
