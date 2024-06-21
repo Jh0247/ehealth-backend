@@ -22,7 +22,7 @@ class AuthenticateAdmin
             return response()->json(['error' => 'User not authenticated.'], 401);
         }
 
-        if ($user->user_role !== 'admin' || $user->organization_id !== 1) {
+        if ($user->user_role !== 'e-admin' || $user->organization_id !== 1) {
             return response()->json(['error' => 'Unauthorized access. E-Health Admins only.'], 403);
         }
 

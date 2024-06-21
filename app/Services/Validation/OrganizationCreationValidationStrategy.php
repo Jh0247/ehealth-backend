@@ -16,12 +16,11 @@ class OrganizationCreationValidationStrategy implements ValidationStrategyInterf
             'admin_name' => 'required|string|between:2,100',
             'admin_email' => 'required|string|email|max:100|unique:users,email',
             'admin_contact' => 'required|string|between:10,15',
-            'admin_icno' => 'required|string|between:12,14|unique:users',
+            'admin_icno' => 'required|string|between:12,14|unique:users,icno',
             'password' => 'required|string|confirmed|min:6',
-            'locations' => 'required|array|min:1',
-            'locations.*.address' => 'required|string|max:255',
-            'locations.*.latitude' => 'required|numeric|between:-90,90',
-            'locations.*.longitude' => 'required|numeric|between:-180,180',
+            'address' => 'required|string|max:255',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
         ]);
 
         if ($validator->fails()) {

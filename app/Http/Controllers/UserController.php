@@ -108,4 +108,22 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User status updated successfully']);
     }
+
+    public function searchUserByIcno(Request $request)
+    {
+        $request->validate([
+            'icno' => 'required|string',
+        ]);
+    
+        $icno = $request->input('icno');
+        $users = User::where('icno', 'like', '%' . $icno . '%')
+            ->where('user_role', 'user')
+            ->get();
+    
+        if ($users->isEmpty()) {
+            return response()->json(['message' => 'No users found with the provided IC number'], 404);
+        }
+    
+        return response()->json($users);
+    }    
 }

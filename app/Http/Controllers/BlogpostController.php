@@ -48,10 +48,17 @@ class BlogpostController extends Controller
 
     public function getAllBlogposts(Request $request)
     {
-        $blogposts = Blogpost::orderBy('created_at', 'desc')->paginate(10);
-
+        $query = Blogpost::orderBy('created_at', 'desc');
+    
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        $blogposts = $query->paginate(10);
+    
         return response()->json($blogposts);
     }
+    
 
     public function updateBlogpostStatus(Request $request, $id)
     {

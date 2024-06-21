@@ -14,7 +14,10 @@ class Organization extends Model
     protected $fillable = [
         'name',
         'code',
-        'type'
+        'type',
+        'address',
+        'latitude',
+        'longitude',
     ];
 
     public function users()
@@ -25,10 +28,5 @@ class Organization extends Model
     public function appointments()
     {
         return $this->hasMany(Appointment::class);
-    }
-
-    public function locations()
-    {
-        return $this->hasMany(Location::class);
     }
 }

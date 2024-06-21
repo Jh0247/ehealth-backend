@@ -39,6 +39,9 @@ class OrganizationController extends Controller
                 'name' => $request->organization_name,
                 'code' => $request->organization_code,
                 'type' => $request->organization_type,
+                'address' => $request->address,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
             ]);
 
             // Prepare admin data
@@ -52,17 +55,6 @@ class OrganizationController extends Controller
                 'user_role' => 'admin',
                 'status' => 'pending'
             ];
-
-            // Insert into locations table
-            if ($request->has('locations') && is_array($request->locations)) {
-                foreach ($request->locations as $locationData) {
-                    $organization->locations()->create([
-                        'address' => $locationData['address'],
-                        'latitude' => $locationData['latitude'],
-                        'longitude' => $locationData['longitude'],
-                    ]);
-                }
-            }
 
             // Use UserFacade to create the admin user
             $user = $this->userFacade->createUser($adminData, 'admin');
@@ -85,10 +77,10 @@ class OrganizationController extends Controller
         }
     }
 
-    // Display organization details with locations
+    // Display organization details
     public function findOrganizationDetails($id)
     {
-        $organization = Organization::with('locations')->find($id);
+        $organization = Organization::find($id);
 
         if (!$organization) {
             return response()->json(['error' => 'Organization not found'], 404);
@@ -121,10 +113,7 @@ class OrganizationController extends Controller
         $numAppointments = $organization->appointments()->count();
 
         // Number of blog posts created by users in the organization
-        $numBlogposts = 0;
-        foreach ($organization->users as $user) {
-            $numBlogposts += $user->blogposts()->count();
-        }
+        $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
 
         // Return the statistics
         return response()->json([
