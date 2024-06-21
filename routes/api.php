@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     // Route for Healthrecord
     Route::get('/user-health-record', [HealthRecordController::class, 'getUserHealthRecord']);
     Route::get('/user-health-record/{userId}', [HealthRecordController::class, 'getSpecificUserHealthRecord']);
+    Route::put('/health-record/{id}', [HealthRecordController::class, 'updateHealthRecord']);
 
     // Route for User
     Route::post('/update-profile', [UserController::class, 'updateProfile']);

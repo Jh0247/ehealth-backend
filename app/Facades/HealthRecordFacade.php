@@ -28,4 +28,16 @@ class HealthRecordFacade
 
         return $this->healthRecordRepository->create($healthRecordData);
     }
+
+    public function updateHealthRecord($id, $healthCondition = null, $bloodType = null, $allergic = null, $diseases = null)
+    {
+        $healthRecordData = $this->healthRecordBuilder
+            ->setHealthCondition($healthCondition)
+            ->setBloodType($bloodType)
+            ->setAllergic($allergic)
+            ->setDiseases($diseases)
+            ->build();
+
+        return $this->healthRecordRepository->update($id, array_filter($healthRecordData));
+    }
 }

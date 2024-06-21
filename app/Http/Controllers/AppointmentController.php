@@ -28,6 +28,7 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::with([
             'user',
+            'user.healthRecord',
             'doctor',
             'organization',
             'prescriptions',
