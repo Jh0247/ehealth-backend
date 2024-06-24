@@ -9,6 +9,8 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\CollaborationRequestController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\PurchaseRecordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +61,7 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/organization/{organizationId}/appointments', [AppointmentController::class, 'getAppointmentsByOrganization']);
     Route::post('/appointment/{id}', [AppointmentController::class, 'updateAppointmentWithPrescriptions']);
     Route::put('/appointment/{id}/status', [AppointmentController::class, 'updateAppointmentStatus']);
+    Route::get('/appointment/{id}/prescriptions', [AppointmentController::class, 'getAppointmentPrescriptions']);
 
     // Route for Blog
     Route::post('/blogposts', [BlogpostController::class, 'createBlogpost']);
@@ -72,8 +75,19 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/user/blogposts', [BlogpostController::class, 'getUserBlogposts']);
 
     // Route for Medication
+    Route::get('/medications/{id}', [MedicationController::class, 'getMedicationDetails']);
     Route::get('/user-medications', [MedicationController::class, 'getUserMedications']);
+    Route::get('/user-medications/{userId}', [MedicationController::class, 'getSpecificUserMedications']);
     Route::get('/medications', [MedicationController::class, 'getAllMedications']);
+
+    // Route for Purchase
+    Route::get('/organization/{organizationId}/purchases', [PurchaseController::class, 'getAllPurchasesByOrganization']);
+    Route::post('/purchases', [PurchaseController::class, 'createPurchaseRecord']);
+    Route::delete('/purchases/{id}', [PurchaseController::class, 'deletePurchaseRecord']);
+    Route::get('/organization/{organizationId}/purchase-statistics', [PurchaseController::class, 'getPurchaseStatistics']);
+
+    // Route for Purchase Record
+    Route::get('/user-purchases', [PurchaseRecordController::class, 'getUserPurchaseRecords']);
 });
 // Route for e-health admin
 Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {

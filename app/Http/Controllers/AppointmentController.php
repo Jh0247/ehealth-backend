@@ -108,7 +108,8 @@ class AppointmentController extends Controller
     public function getAppointmentsByOrganization(Request $request, $organizationId)
     {
         $perPage = $request->input('per_page', 10);
-        $appointments = Appointment::where('organization_id', $organizationId)
+        $appointments = Appointment::with('user')
+            ->where('organization_id', $organizationId)
             ->orderBy('appointment_datetime', 'desc')
             ->paginate($perPage);
 
@@ -220,4 +221,43 @@ class AppointmentController extends Controller
             'appointment' => $appointment
         ], 201);
     }
+
+    public function getAppointmentPrescriptions($id)
+    {
+        $appointment = Appointment::with([
+            'prescriptions',
+            'prescriptions.medication'
+        ])->find($id);
+    
+        if (!$appointment) {
+            return response()->json(['error' => 'Appointment not found'], 404);
+        }
+    
+        return response()->json([
+            'appointment_id' => $appointment->id,
+            'prescriptions' => $appointment->prescriptions->map(function($prescription) {
+                return [
+                    'id' => $prescription->id,
+                    'medication' => [
+                        'id' => $prescription->medication->id,
+                        'name' => $prescription->medication->name,
+                        'description' => $prescription->medication->description,
+                        'ingredient' => $prescription->medication->ingredient,
+                        'form' => $prescription->medication->form,
+                        'usage' => $prescription->medication->usage,
+                        'strength' => $prescription->medication->strength,
+                        'manufacturer' => $prescription->medication->manufacturer,
+                        'price' => $prescription->medication->price,
+                    ],
+                    'dosage' => $prescription->dosage,
+                    'frequency' => $prescription->frequency,
+                    'duration' => $prescription->duration,
+                    'prescription_date' => $prescription->prescription_date,
+                    'start_date' => $prescription->start_date,
+                    'end_date' => $prescription->end_date,
+                ];
+            })
+        ]);
+    }
+    
 }
