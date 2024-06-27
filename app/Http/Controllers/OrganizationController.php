@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Organization;
+use App\Models\User;
+use Carbon\Carbon;
 
 class OrganizationController extends Controller
 {
@@ -101,25 +103,94 @@ class OrganizationController extends Controller
     {
         // Find the organization
         $organization = Organization::find($id);
-
+    
         if (!$organization) {
             return response()->json(['error' => 'Organization not found'], 404);
         }
-
+    
         // Number of staff in the organization
         $numStaffs = $organization->users()->count();
-
+    
         // Number of appointments in the organization
         $numAppointments = $organization->appointments()->count();
-
+    
         // Number of blog posts created by users in the organization
         $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
-
+    
+        // Appointments data grouped by date for the past month (Line Chart)
+        $startDate = Carbon::now()->subMonth();
+        $dailyAppointments = $organization->appointments()
+            ->whereBetween('appointment_datetime', [$startDate, Carbon::now()])
+            ->selectRaw('DATE(appointment_datetime) as date, COUNT(*) as total_appointments')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+    
+        // Blogposts by users (Bar Chart)
+        $blogpostsByUser = $organization->users()->withCount('blogposts')
+            ->orderBy('blogposts_count', 'desc')
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'user_name' => $user->name,
+                    'total_blogposts' => $user->blogposts_count,
+                ];
+            });
+    
+        // Staff distribution by roles (Pie Chart)
+        $staffByRole = $organization->users()
+            ->selectRaw('user_role, COUNT(*) as total')
+            ->groupBy('user_role')
+            ->get()
+            ->map(function ($role) {
+                return [
+                    'role' => $role->user_role,
+                    'total' => $role->total,
+                ];
+            });
+    
         // Return the statistics
         return response()->json([
             'num_staffs' => $numStaffs,
             'num_appointments' => $numAppointments,
-            'num_blogposts' => $numBlogposts
+            'num_blogposts' => $numBlogposts,
+            'daily_appointments' => $dailyAppointments,
+            'blogposts_by_user' => $blogpostsByUser,
+            'staff_by_role' => $staffByRole
         ]);
+    }
+
+    public function adminViewAllOrganizations()
+    {
+        $organizations = Organization::where('id', '!=', 1)->get();
+
+        $organizationsDetails = $organizations->map(function ($organization) {
+            // Get the first admin
+            $firstAdmin = User::where('organization_id', $organization->id)
+                ->where('user_role', 'admin')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            // Number of staff in the organization
+            $numStaffs = $organization->users()->count();
+
+            // Number of appointments in the organization
+            $numAppointments = $organization->appointments()->count();
+
+            // Number of blog posts created by users in the organization
+            $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
+
+            return [
+                'organization' => $organization,
+                'first_admin' => $firstAdmin,
+                'stats' => [
+                    'num_staffs' => $numStaffs,
+                    'num_appointments' => $numAppointments,
+                    'num_blogposts' => $numBlogposts
+                ]
+            ];
+        });
+
+        return response()->json($organizationsDetails);
     }
 }

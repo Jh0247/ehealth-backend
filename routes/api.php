@@ -11,6 +11,7 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\CollaborationRequestController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseRecordController;
+use App\Http\Controllers\StatisticsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,7 @@ Route::middleware(['auth:sanctum', 'auth.user'])->group(function () {
     Route::get('/organization/{organizationId}/users/{role}', [UserController::class, 'getUsersByRoleAndOrganization']);
     Route::get('/organization/{organizationId}/users', [UserController::class, 'getUsersByOrganization']);
     Route::get('/search-user', [UserController::class, 'searchUserByIcno']);
+    Route::put('/user/update-password', [UserController::class, 'updatePassword']);
 
     //Route for organization
     Route::get('/organization/{id}', [OrganizationController::class, 'findOrganizationDetails']);
@@ -94,6 +96,18 @@ Route::middleware(['auth:sanctum', 'auth.admin'])->group(function () {
     Route::post('/admin-register', [RegistrationController::class, 'registerAdmin']);
     Route::post('/collaboration-request/approve/{userId}', [CollaborationRequestController::class, 'approveRequest']);
     Route::post('/collaboration-request/decline/{userId}', [CollaborationRequestController::class, 'declineRequest']);
+    Route::post('/stop-collaboration', [CollaborationRequestController::class, 'stopCollaboration']);
+    Route::post('/medications', [MedicationController::class, 'createMedication']);
+    Route::put('/medications/{id}', [MedicationController::class, 'updateMedication']);
+    Route::get('/admin-view-all-organization', [OrganizationController::class, 'adminViewAllOrganizations']);
+    Route::get('/admin/statistics/user-registrations', [StatisticsController::class, 'userRegistrations']);
+    Route::get('/admin/statistics/blogpost-status', [StatisticsController::class, 'blogpostStatus']);
+    Route::get('/admin/statistics/appointments-by-type', [StatisticsController::class, 'appointmentsByType']);
+    Route::get('/admin/statistics/sales-over-time', [StatisticsController::class, 'salesOverTime']);
+    Route::get('/admin/statistics/medications-sold', [StatisticsController::class, 'medicationsSold']);
+    Route::get('/admin/statistics/organization-stats/{id}', [StatisticsController::class, 'organizationStats']);
+    Route::get('/collaboration-requests', [CollaborationRequestController::class, 'getCollaborationRequests']);
+    Route::post('/recollaborate', [CollaborationRequestController::class, 'recollaborate']);
 });
 // Route for collaborated organization admin
 Route::middleware(['auth:sanctum', 'auth.organization-admin'])->group(function () {

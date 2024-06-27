@@ -58,7 +58,6 @@ class BlogpostController extends Controller
     
         return response()->json($blogposts);
     }
-    
 
     public function updateBlogpostStatus(Request $request, $id)
     {
@@ -71,8 +70,7 @@ class BlogpostController extends Controller
             return response()->json(['errors' => implode(' ', $errors)], 422);
         }
 
-        $user = $request->user();
-        $blogpost = $user->blogposts()->find($id);
+        $blogpost = Blogpost::find($id);
 
         if (!$blogpost) {
             return response()->json(['error' => 'Blogpost not found'], 404);

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -79,10 +80,23 @@ class UserController extends Controller
         return response()->json($users);
     }
 
-    public function getUsersByOrganization($organizationId)
+    public function getUsersByOrganization(Request $request, $organizationId)
     {
-        $users = User::where('organization_id', $organizationId)->get();
-
+        // Find the first user who requested the collaboration
+        $firstUser = User::where('organization_id', $organizationId)
+            ->where('user_role', 'admin')
+            ->orderBy('created_at', 'asc')
+            ->first();
+    
+        // Get the authenticated user
+        $authenticatedUser = $request->user();
+    
+        // Get all users in the organization excluding the first user and the authenticated user
+        $users = User::where('organization_id', $organizationId)
+            ->where('id', '!=', $firstUser ? $firstUser->id : null)
+            ->where('id', '!=', $authenticatedUser->id)
+            ->get();
+    
         return response()->json($users);
     }
 
@@ -125,5 +139,29 @@ class UserController extends Controller
         }
     
         return response()->json($users);
-    }    
+    }
+
+    public function updatePassword(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user;
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Current password is incorrect'], 403);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully'], 200);
+    }
 }

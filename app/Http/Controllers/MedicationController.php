@@ -6,6 +6,7 @@ use App\Models\Medication;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class MedicationController extends Controller
 {
@@ -77,5 +78,55 @@ class MedicationController extends Controller
         }
 
         return response()->json($medication);
+    }
+
+    public function createMedication(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'ingredient' => 'required|string',
+            'form' => 'required|string|max:255',
+            'usage' => 'required|string',
+            'strength' => 'required|string|max:255',
+            'manufacturer' => 'required|string|max:255',
+            'price' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $medication = Medication::create($request->all());
+
+        return response()->json(['message' => 'Medication created successfully', 'medication' => $medication], 201);
+    }
+
+    public function updateMedication(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'ingredient' => 'sometimes|required|string',
+            'form' => 'sometimes|required|string|max:255',
+            'usage' => 'sometimes|required|string',
+            'strength' => 'sometimes|required|string|max:255',
+            'manufacturer' => 'sometimes|required|string|max:255',
+            'price' => 'sometimes|required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $medication = Medication::find($id);
+
+        if (!$medication) {
+            return response()->json(['error' => 'Medication not found.'], 404);
+        }
+
+        $medication->update($request->all());
+
+        return response()->json(['message' => 'Medication updated successfully', 'medication' => $medication]);
     }
 }

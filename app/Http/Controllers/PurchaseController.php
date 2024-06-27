@@ -58,34 +58,60 @@ class PurchaseController extends Controller
         return response()->json(['message' => 'Purchase record deleted successfully'], 200);
     }
 
-    // Get statistic data for purchase records
     public function getPurchaseStatistics($organizationId)
     {
         $organization = Organization::find($organizationId);
-
+    
         if (!$organization) {
             return response()->json(['error' => 'Organization not found'], 404);
         }
-
+    
         // Total purchase records made
         $totalPurchases = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->count();
-
+    
         // Total sales made by organization
         $totalSales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->sum('total_payment');
-
+    
         // Total sales made today by organization
         $todaySales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->whereDate('date_purchase', Carbon::today())->sum('total_payment');
-
+    
+        // Sales data grouped by date for the past month (Line Chart)
+        $startDate = Carbon::now()->subMonth();
+        $dailySales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
+            $query->where('organization_id', $organizationId);
+        })->whereBetween('date_purchase', [$startDate, Carbon::now()])
+            ->selectRaw('DATE(date_purchase) as date, SUM(total_payment) as total_sales')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+    
+        // Sales by medication (Bar Chart)
+        $salesByMedication = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
+            $query->where('organization_id', $organizationId);
+        })->selectRaw('medication_id, SUM(total_payment) as total_sales')
+            ->groupBy('medication_id')
+            ->with('medication')
+            ->orderBy('total_sales', 'desc')
+            ->get()
+            ->map(function ($record) {
+                return [
+                    'medication_name' => $record->medication->name,
+                    'total_sales' => $record->total_sales,
+                ];
+            });
+    
         return response()->json([
             'total_purchases' => $totalPurchases,
             'total_sales' => $totalSales,
             'today_sales' => $todaySales,
+            'daily_sales' => $dailySales,
+            'sales_by_medication' => $salesByMedication,
         ]);
     }
 }
