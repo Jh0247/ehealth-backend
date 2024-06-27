@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Facades\HealthRecordFacade;
+use App\Facades\UserFacade;
 use App\Models\Blogpost;
 use App\Models\Organization;
 use App\Models\User;
@@ -10,7 +11,7 @@ use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
 
 /**
- * CollaborationRequestController handles operations related to collaboration requests.
+ * CollaborationRequestController handles all operations related to collaboration requests.
  */
 class CollaborationRequestController extends Controller
 {
@@ -25,19 +26,26 @@ class CollaborationRequestController extends Controller
     protected $healthRecordFacade;
 
     /**
+     * @var UserFacade
+     */
+    protected $userFacade;
+
+    /**
      * CollaborationRequestController constructor.
      *
      * @param UserRepositoryInterface $userRepository
      * @param HealthRecordFacade $healthRecordFacade
+     * @param UserFacade $userFacade
      */
-    public function __construct(UserRepositoryInterface $userRepository, HealthRecordFacade $healthRecordFacade)
+    public function __construct(UserRepositoryInterface $userRepository, HealthRecordFacade $healthRecordFacade, UserFacade $userFacade)
     {
         $this->userRepository = $userRepository;
         $this->healthRecordFacade = $healthRecordFacade;
+        $this->userFacade = $userFacade;
     }
 
     /**
-     * Approve a collaboration request for a specific user.
+     * Approve a collaboration request.
      *
      * @param Request $request
      * @param int $userId
@@ -45,14 +53,13 @@ class CollaborationRequestController extends Controller
      */
     public function approveRequest(Request $request, $userId)
     {
-        $user = $this->userRepository->find($userId);
+        $user = $this->userFacade->findUser($userId);
 
         if (!$user || $user->status !== 'pending') {
             return response()->json(['error' => 'Invalid request or user not found'], 404);
         }
 
-        $user->status = 'active';
-        $this->userRepository->update($userId, ['status' => 'active']);
+        $this->userFacade->updateUser($userId, ['status' => 'active']);
 
         // Facade create health record
         $this->healthRecordFacade->createHealthRecordForUser($user->id);
@@ -61,7 +68,7 @@ class CollaborationRequestController extends Controller
     }
 
     /**
-     * Decline a collaboration request for a specific user.
+     * Decline a collaboration request.
      *
      * @param Request $request
      * @param int $userId
@@ -69,20 +76,19 @@ class CollaborationRequestController extends Controller
      */
     public function declineRequest(Request $request, $userId)
     {
-        $user = $this->userRepository->find($userId);
+        $user = $this->userFacade->findUser($userId);
 
         if (!$user || $user->status !== 'pending') {
             return response()->json(['error' => 'Invalid request or user not found'], 404);
         }
 
-        $user->status = 'terminated';
-        $this->userRepository->update($userId, ['status' => 'terminated']);
+        $this->userFacade->updateUser($userId, ['status' => 'terminated']);
 
         return response()->json(['message' => 'Collaboration request declined successfully', 'user' => $user], 200);
     }
 
     /**
-     * Stop collaboration for a specific organization.
+     * Stop collaboration for an organization.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -98,8 +104,7 @@ class CollaborationRequestController extends Controller
         // Update all users' status in the organization to 'terminated'
         $users = User::where('organization_id', $organizationId)->get();
         foreach ($users as $user) {
-            $user->status = 'terminated';
-            $user->save();
+            $this->userFacade->updateUser($user->id, ['status' => 'terminated']);
 
             // Update all blogposts' status of the user to 'terminated'
             Blogpost::where('user_id', $user->id)->update(['status' => 'terminated']);
@@ -109,7 +114,7 @@ class CollaborationRequestController extends Controller
     }
 
     /**
-     * Get all collaboration requests for organizations with pending users.
+     * Get all pending collaboration requests.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -125,7 +130,7 @@ class CollaborationRequestController extends Controller
     }
 
     /**
-     * Re-collaborate an organization by activating the first admin.
+     * Re-collaborate for an organization by activating the first admin.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -149,8 +154,7 @@ class CollaborationRequestController extends Controller
         }
 
         // Update the first admin's status to 'active'
-        $firstAdmin->status = 'active';
-        $firstAdmin->save();
+        $this->userFacade->updateUser($firstAdmin->id, ['status' => 'active']);
 
         return response()->json(['message' => 'Collaboration reinstated successfully, the first admin account is now active', 'admin' => $firstAdmin]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Facades\UserFacade;
 use App\Models\User;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
@@ -21,12 +22,20 @@ class UserController extends Controller
     protected $profileUpdateValidatorContext;
 
     /**
-     * UserController constructor.
+     * @var UserFacade
      */
-    public function __construct()
+    protected $userFacade;
+
+    /**
+     * UserController constructor.
+     *
+     * @param UserFacade $userFacade
+     */
+    public function __construct(UserFacade $userFacade)
     {
         $this->profileUpdateValidatorContext = new ValidatorContext();
         $this->profileUpdateValidatorContext->addStrategy(new UserProfileUpdateValidationStrategy());
+        $this->userFacade = $userFacade;
     }
 
     /**
@@ -45,16 +54,7 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        if ($request->has('name')) {
-            $user->name = $request->name;
-        }
-        if ($request->has('email')) {
-            $user->email = $request->email;
-        }
-        if ($request->has('contact')) {
-            $user->contact = $request->contact;
-        }
-
+        $data = $request->only(['name', 'email', 'contact']);
         if ($request->hasFile('profile_img')) {
             if ($user->profile_img) {
                 Storage::disk('s3')->delete($user->profile_img);
@@ -62,10 +62,10 @@ class UserController extends Controller
 
             $imagePath = $request->file('profile_img')->store('profile_images', 's3');
             Storage::url($imagePath);
-            $user->profile_img = env('APP_S3_URL') . '/ehealth/' . $imagePath;
+            $data['profile_img'] = env('APP_S3_URL') . '/ehealth/' . $imagePath;
         }
 
-        $user->save();
+        $this->userFacade->updateUser($user->id, $data);
         $user->load('organization');
 
         return response()->json([
@@ -132,14 +132,7 @@ class UserController extends Controller
             return response()->json(['errors' => implode(' ', $errors)], 422);
         }
 
-        $user = User::find($id);
-
-        if (!$user) {
-            return response()->json(['error' => 'User not found'], 404);
-        }
-
-        $user->status = $request->status;
-        $user->save();
+        $this->userFacade->updateUser($id, ['status' => $request->status]);
 
         return response()->json(['message' => 'User status updated successfully']);
     }
@@ -191,8 +184,7 @@ class UserController extends Controller
             return response()->json(['error' => 'Current password is incorrect'], 403);
         }
 
-        $user->password = Hash::make($request->new_password);
-        $user->save();
+        $this->userFacade->updateUser($user->id, ['password' => Hash::make($request->new_password)]);
 
         return response()->json(['message' => 'Password updated successfully'], 200);
     }
