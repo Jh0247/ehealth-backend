@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Blogpost;
-use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class BlogpostController extends Controller
 {
+    /**
+     * Create a new blogpost.
+     */
     public function createBlogpost(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -30,7 +32,7 @@ class BlogpostController extends Controller
         if ($request->hasFile('banner')) {
             $bannerPath = $request->file('banner')->store('blog_banners', 's3');
             Storage::url($bannerPath);
-            $bannerPath = 'http://localhost:9000/ehealth/' . $bannerPath;
+            $bannerPath = env('APP_S3_URL') . '/ehealth/' . $bannerPath;
         }
 
         $blogpost = $user->blogposts()->create([
@@ -46,6 +48,9 @@ class BlogpostController extends Controller
         ], 201);
     }
 
+    /**
+     * Get all blogposts with optional status filtering.
+     */
     public function getAllBlogposts(Request $request)
     {
         $query = Blogpost::orderBy('created_at', 'desc');
@@ -59,6 +64,9 @@ class BlogpostController extends Controller
         return response()->json($blogposts);
     }
 
+    /**
+     * Update the status of a blogpost.
+     */
     public function updateBlogpostStatus(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -81,6 +89,9 @@ class BlogpostController extends Controller
         return response()->json(['message' => 'Blogpost status updated successfully']);
     }
 
+    /**
+     * Delete a specific blogpost by its ID.
+     */
     public function deleteBlogpost(Request $request, $id)
     {
         $user = $request->user();
@@ -90,9 +101,8 @@ class BlogpostController extends Controller
             return response()->json(['error' => 'Blogpost not found'], 404);
         }
 
-        // Delete the banner image from S3 if it exists
         if ($blogpost->banner) {
-            $bannerPath = str_replace('http://localhost:9000/ehealth/', '', $blogpost->banner);
+            $bannerPath = str_replace(env('APP_S3_URL') . '/ehealth/', '', $blogpost->banner);
             Storage::disk('s3')->delete($bannerPath);
         }
 
@@ -101,6 +111,9 @@ class BlogpostController extends Controller
         return response()->json(['message' => 'Blogpost deleted successfully']);
     }
 
+    /**
+     * Search for blogposts by title.
+     */
     public function searchBlogpostByName(Request $request, $name)
     {
         $blogposts = Blogpost::where('title', 'like', '%' . $name . '%')->paginate(10);
@@ -108,6 +121,9 @@ class BlogpostController extends Controller
         return response()->json($blogposts);
     }
 
+    /**
+     * Get a specific blogpost by its ID.
+     */
     public function getSpecificBlogpost(Request $request, $id)
     {
         $blogpost = Blogpost::with('user')->find($id);
@@ -119,12 +135,13 @@ class BlogpostController extends Controller
         return response()->json($blogpost);
     }
 
+    /**
+     * Update a specific blogpost.
+     */
     public function updateBlogpost(Request $request, $id)
     {
-        // Access the request data
         $data = $request->all();
     
-        // Validate the request data
         $validator = Validator::make($data, [
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -132,53 +149,46 @@ class BlogpostController extends Controller
             'status' => 'required|string',
         ]);
     
-        // Handle validation errors
         if ($validator->fails()) {
             $errors = $validator->errors()->all();
             return response()->json(['errors' => implode(' ', $errors)], 422);
         }
     
-        // Get the authenticated user
         $user = $request->user();
         $blogpost = $user->blogposts()->find($id);
     
-        // Check if the blogpost exists
         if (!$blogpost) {
             return response()->json(['error' => 'Blogpost not found'], 404);
         }
     
-        // Handle banner image upload
         if ($request->hasFile('banner')) {
-            // Delete the old banner image if it exists
             if ($blogpost->banner) {
-                $bannerPath = str_replace('http://localhost:9000/ehealth/', '', $blogpost->banner);
+                $bannerPath = str_replace(env('APP_S3_URL') . '/ehealth/', '', $blogpost->banner);
                 Storage::disk('s3')->delete($bannerPath);
             }
     
-            // Upload the new banner image
             $bannerPath = $request->file('banner')->store('blog_banners', 's3');
             Storage::url($bannerPath);
-            $bannerPath = 'http://localhost:9000/ehealth/' . $bannerPath;
+            $bannerPath = env('APP_S3_URL') . '/ehealth/' . $bannerPath;
     
-            // Update the banner path
             $blogpost->banner = $bannerPath;
         }
     
-        // Update other fields
         $blogpost->title = $request->input('title');
         $blogpost->content = $request->input('content');
         $blogpost->status = $request->input('status');
     
-        // Save the updated blogpost
         $blogpost->save();
     
-        // Return a response
         return response()->json([
             'message' => 'Blogpost updated successfully',
             'blogpost' => $blogpost
         ]);
     }
 
+    /**
+     * Get blogposts by status with pagination.
+     */
     public function getBlogpostsByStatus(Request $request, $status)
     {
         $blogposts = Blogpost::where('status', $status)->orderBy('created_at', 'desc')->paginate(10);
@@ -186,6 +196,9 @@ class BlogpostController extends Controller
         return response()->json($blogposts);
     }
 
+    /**
+     * Get blogposts of the authenticated user.
+     */
     public function getUserBlogposts(Request $request)
     {
         $user = $request->user();

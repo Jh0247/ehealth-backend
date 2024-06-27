@@ -5,8 +5,19 @@ namespace App\Services\Validation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Class OrganizationCreationValidationStrategy
+ *
+ * @package App\Services\Validation
+ */
 class OrganizationCreationValidationStrategy implements ValidationStrategyInterface
 {
+    /**
+     * Validate the organization creation fields in the request.
+     *
+     * @param Request $request
+     * @return array
+     */
     public function validate(Request $request): array
     {
         $validator = Validator::make($request->all(), [

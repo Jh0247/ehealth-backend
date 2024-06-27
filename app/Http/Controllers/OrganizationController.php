@@ -3,21 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Facades\UserFacade;
-use App\Factories\StaffUserFactory;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\OrganizationCreationValidationStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Organization;
 use App\Models\User;
 use Carbon\Carbon;
 
+/**
+ * OrganizationController handles all operations related to organizations.
+ */
 class OrganizationController extends Controller
 {
+    /**
+     * @var ValidatorContext
+     */
     protected $organizationCreationValidatorContext;
+
+    /**
+     * @var UserFacade
+     */
     protected $userFacade;
 
+    /**
+     * OrganizationController constructor.
+     *
+     * @param UserFacade $userFacade
+     */
     public function __construct(UserFacade $userFacade)
     {
         $this->organizationCreationValidatorContext = new ValidatorContext();
@@ -25,7 +38,12 @@ class OrganizationController extends Controller
         $this->userFacade = $userFacade;
     }
 
-    // company collaboration and create their admin account
+    /**
+     * Create a collaboration request and create an admin account for the organization.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createCollaborationRequest(Request $request)
     {
         $validationResult = $this->organizationCreationValidatorContext->validate($request);
@@ -64,8 +82,7 @@ class OrganizationController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Collaboration request successfully created, please wait for 1 - 3 working 
-                                days to validate the admin account.',
+                'message' => 'Collaboration request successfully created, please wait for 1 - 3 working days to validate the admin account.',
                 'organization' => $organization,
                 'user' => $user
             ], 201);
@@ -79,7 +96,12 @@ class OrganizationController extends Controller
         }
     }
 
-    // Display organization details
+    /**
+     * Display organization details.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function findOrganizationDetails($id)
     {
         $organization = Organization::find($id);
@@ -91,7 +113,11 @@ class OrganizationController extends Controller
         return response()->json($organization);
     }
 
-    // Get all organizations, except for id 1
+    /**
+     * Get all organizations except for id 1.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAllOrganizations()
     {
         $organizations = Organization::where('id', '!=', 1)->get();
@@ -99,25 +125,24 @@ class OrganizationController extends Controller
         return response()->json($organizations);
     }
 
+    /**
+     * Get organization statistics by organization ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getOrganizationStats($id)
     {
-        // Find the organization
         $organization = Organization::find($id);
     
         if (!$organization) {
             return response()->json(['error' => 'Organization not found'], 404);
         }
     
-        // Number of staff in the organization
         $numStaffs = $organization->users()->count();
-    
-        // Number of appointments in the organization
         $numAppointments = $organization->appointments()->count();
-    
-        // Number of blog posts created by users in the organization
         $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
     
-        // Appointments data grouped by date for the past month (Line Chart)
         $startDate = Carbon::now()->subMonth();
         $dailyAppointments = $organization->appointments()
             ->whereBetween('appointment_datetime', [$startDate, Carbon::now()])
@@ -126,7 +151,6 @@ class OrganizationController extends Controller
             ->orderBy('date')
             ->get();
     
-        // Blogposts by users (Bar Chart)
         $blogpostsByUser = $organization->users()->withCount('blogposts')
             ->orderBy('blogposts_count', 'desc')
             ->get()
@@ -137,7 +161,6 @@ class OrganizationController extends Controller
                 ];
             });
     
-        // Staff distribution by roles (Pie Chart)
         $staffByRole = $organization->users()
             ->selectRaw('user_role, COUNT(*) as total')
             ->groupBy('user_role')
@@ -149,7 +172,6 @@ class OrganizationController extends Controller
                 ];
             });
     
-        // Return the statistics
         return response()->json([
             'num_staffs' => $numStaffs,
             'num_appointments' => $numAppointments,
@@ -160,24 +182,23 @@ class OrganizationController extends Controller
         ]);
     }
 
+    /**
+     * Admin view for all organizations except for id 1.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function adminViewAllOrganizations()
     {
         $organizations = Organization::where('id', '!=', 1)->get();
 
         $organizationsDetails = $organizations->map(function ($organization) {
-            // Get the first admin
             $firstAdmin = User::where('organization_id', $organization->id)
                 ->where('user_role', 'admin')
                 ->orderBy('created_at', 'asc')
                 ->first();
 
-            // Number of staff in the organization
             $numStaffs = $organization->users()->count();
-
-            // Number of appointments in the organization
             $numAppointments = $organization->appointments()->count();
-
-            // Number of blog posts created by users in the organization
             $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
 
             return [

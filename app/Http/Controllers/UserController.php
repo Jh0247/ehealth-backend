@@ -10,16 +10,31 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * UserController handles all operations related to user management.
+ */
 class UserController extends Controller
 {
+    /**
+     * @var ValidatorContext
+     */
     protected $profileUpdateValidatorContext;
 
+    /**
+     * UserController constructor.
+     */
     public function __construct()
     {
         $this->profileUpdateValidatorContext = new ValidatorContext();
         $this->profileUpdateValidatorContext->addStrategy(new UserProfileUpdateValidationStrategy());
     }
 
+    /**
+     * Update the profile of the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateProfile(Request $request)
     {
         $validationResult = $this->profileUpdateValidatorContext->validate($request);
@@ -28,10 +43,8 @@ class UserController extends Controller
             return response()->json($validationResult['errors'], 422);
         }
 
-        // Get the authenticated user
-        $user = $request->user;
+        $user = $request->user();
 
-        // Update user details
         if ($request->has('name')) {
             $user->name = $request->name;
         }
@@ -42,35 +55,32 @@ class UserController extends Controller
             $user->contact = $request->contact;
         }
 
-        // Handle profile image upload
         if ($request->hasFile('profile_img')) {
-            // Delete the old profile image if it exists
             if ($user->profile_img) {
                 Storage::disk('s3')->delete($user->profile_img);
             }
 
-            // Upload the new profile image
             $imagePath = $request->file('profile_img')->store('profile_images', 's3');
-
-            // Save the path to the user's profile_img field
             Storage::url($imagePath);
-            
-           // string builder to add bucket name to url
-            $user->profile_img = 'http://localhost:9000/ehealth/'.$imagePath;
+            $user->profile_img = env('APP_S3_URL') . '/ehealth/' . $imagePath;
         }
 
-        // Save the updated user details
         $user->save();
-
         $user->load('organization');
 
-        // Return a response
         return response()->json([
             'message' => 'Profile updated successfully',
             'user' => $user
         ]);
     }
 
+    /**
+     * Get users by role and organization ID.
+     *
+     * @param int $organizationId
+     * @param string $role
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUsersByRoleAndOrganization($organizationId, $role)
     {
         $users = User::where('organization_id', $organizationId)
@@ -80,26 +90,37 @@ class UserController extends Controller
         return response()->json($users);
     }
 
+    /**
+     * Get users by organization ID excluding the first admin and the authenticated user.
+     *
+     * @param Request $request
+     * @param int $organizationId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUsersByOrganization(Request $request, $organizationId)
     {
-        // Find the first user who requested the collaboration
         $firstUser = User::where('organization_id', $organizationId)
             ->where('user_role', 'admin')
             ->orderBy('created_at', 'asc')
             ->first();
-    
-        // Get the authenticated user
+
         $authenticatedUser = $request->user();
-    
-        // Get all users in the organization excluding the first user and the authenticated user
+
         $users = User::where('organization_id', $organizationId)
             ->where('id', '!=', $firstUser ? $firstUser->id : null)
             ->where('id', '!=', $authenticatedUser->id)
             ->get();
-    
+
         return response()->json($users);
     }
 
+    /**
+     * Update the status of a specific user by user ID.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateUserStatus(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -123,6 +144,12 @@ class UserController extends Controller
         return response()->json(['message' => 'User status updated successfully']);
     }
 
+    /**
+     * Search for users by IC number.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function searchUserByIcno(Request $request)
     {
         $request->validate([
@@ -141,15 +168,20 @@ class UserController extends Controller
         return response()->json($users);
     }
 
+    /**
+     * Update the password of the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updatePassword(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'current_password' => 'required|string',
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = $request->user;
+        $user = $request->user();
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);

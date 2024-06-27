@@ -5,8 +5,19 @@ namespace App\Services\Validation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Class UserProfileUpdateValidationStrategy
+ *
+ * @package App\Services\Validation
+ */
 class UserProfileUpdateValidationStrategy implements ValidationStrategyInterface
 {
+    /**
+     * Validate the user profile update fields in the request.
+     *
+     * @param Request $request
+     * @return array
+     */
     public function validate(Request $request): array
     {
         $validator = Validator::make($request->all(), [

@@ -5,8 +5,19 @@ namespace App\Factories;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Class NormalUserFactory
+ *
+ * @package App\Factories
+ */
 class NormalUserFactory extends UserFactory
 {
+    /**
+     * Create a new normal user.
+     *
+     * @param array $data
+     * @return User
+     */
     public function createUser(array $data): User
     {
         return User::create([

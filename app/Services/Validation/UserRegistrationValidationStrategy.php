@@ -5,8 +5,19 @@ namespace App\Services\Validation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * Class UserRegistrationValidationStrategy
+ *
+ * @package App\Services\Validation
+ */
 class UserRegistrationValidationStrategy implements ValidationStrategyInterface
 {
+    /**
+     * Validate the user registration fields in the request.
+     *
+     * @param Request $request
+     * @return array
+     */
     public function validate(Request $request): array
     {
         $validator = Validator::make($request->all(), [
@@ -18,8 +29,6 @@ class UserRegistrationValidationStrategy implements ValidationStrategyInterface
         ]);
 
         if ($validator->fails()) {
-            // return ['errors' => $validator->errors()];
-            
             $errors = $validator->errors()->all();
             return ['errors' => implode(' ', $errors)];
         }

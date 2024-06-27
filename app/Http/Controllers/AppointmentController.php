@@ -1,18 +1,21 @@
 <?php
+/**
+ * AppointmentController handles all operations related to appointments.
+ */
 
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Prescription;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class AppointmentController extends Controller
-{
+class AppointmentController extends Controller {
 
-    public function getUserAppointments(Request $request)
-    {
+    /**
+     * Get the list of appointments for the authenticated user.
+     */
+    public function getUserAppointments(Request $request) {
         $user = $request->user();
 
         if ($user->user_role === 'doctor') {
@@ -24,8 +27,10 @@ class AppointmentController extends Controller
         return response()->json($appointments);
     }
 
-    public function getAppointmentDetails($id)
-    {
+    /**
+     * Get the details of a specific appointment by its ID.
+     */
+    public function getAppointmentDetails($id) {
         $appointment = Appointment::with([
             'user',
             'user.healthRecord',
@@ -43,8 +48,10 @@ class AppointmentController extends Controller
         return response()->json($appointment);
     }
 
-    public function bookAppointment(Request $request)
-    {
+    /**
+     * Book a new appointment.
+     */
+    public function bookAppointment(Request $request) {
         $request->validate([
             'doctor_id' => 'required|exists:users,id',
             'organization_id' => 'required|exists:organizations,id',
@@ -71,8 +78,10 @@ class AppointmentController extends Controller
         ], 201);
     }
 
-    public function deleteAppointment($id)
-    {
+    /**
+     * Delete a specific appointment by its ID.
+     */
+    public function deleteAppointment($id) {
         $appointment = Appointment::find($id);
 
         if (!$appointment) {
@@ -88,8 +97,10 @@ class AppointmentController extends Controller
         return response()->json(['message' => 'Appointment deleted successfully'], 200);
     }
 
-    public function getPatientsByDoctorAppointments(Request $request)
-    {
+    /**
+     * Get a list of patients by the doctor's appointments.
+     */
+    public function getPatientsByDoctorAppointments(Request $request) {
         $user = $request->user();
 
         if ($user->user_role !== 'doctor') {
@@ -105,8 +116,10 @@ class AppointmentController extends Controller
         return response()->json($patients->values());
     }
 
-    public function getAppointmentsByOrganization(Request $request, $organizationId)
-    {
+    /**
+     * Get a list of appointments by organization with pagination.
+     */
+    public function getAppointmentsByOrganization(Request $request, $organizationId) {
         $perPage = $request->input('per_page', 10);
         $appointments = Appointment::with('user')
             ->where('organization_id', $organizationId)
@@ -116,8 +129,10 @@ class AppointmentController extends Controller
         return response()->json($appointments);
     }
 
-    public function updateAppointmentWithPrescriptions(Request $request, $id)
-    {
+    /**
+     * Update an appointment and its prescriptions.
+     */
+    public function updateAppointmentWithPrescriptions(Request $request, $id) {
         $request->validate([
             'duration' => 'nullable|integer',
             'note' => 'nullable|string',
@@ -138,7 +153,6 @@ class AppointmentController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Update appointment details
         if ($request->has('duration')) {
             $appointment->duration = $request->duration;
         }
@@ -146,7 +160,6 @@ class AppointmentController extends Controller
             $appointment->note = $request->note;
         }
 
-        // Handle prescriptions
         foreach ($request->prescriptions as $prescriptionData) {
             $prescription = new Prescription([
                 'appointment_id' => $appointment->id,
@@ -161,7 +174,6 @@ class AppointmentController extends Controller
             $prescription->save();
         }
 
-        // Update the appointment status to completed
         $appointment->status = 'completed';
         $appointment->save();
 
@@ -172,8 +184,10 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function updateAppointmentStatus(Request $request, $id)
-    {
+    /**
+     * Update the status of an appointment.
+     */
+    public function updateAppointmentStatus(Request $request, $id) {
         $request->validate([
             'status' => 'required|string',
         ]);
@@ -193,8 +207,10 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function adminBookAppointment(Request $request)
-    {
+    /**
+     * Book an appointment as an admin for a user.
+     */
+    public function adminBookAppointment(Request $request) {
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'doctor_id' => 'required|exists:users,id',
@@ -222,8 +238,10 @@ class AppointmentController extends Controller
         ], 201);
     }
 
-    public function getAppointmentPrescriptions($id)
-    {
+    /**
+     * Get the list of prescriptions for a specific appointment.
+     */
+    public function getAppointmentPrescriptions($id) {
         $appointment = Appointment::with([
             'prescriptions',
             'prescriptions.medication'
@@ -259,5 +277,4 @@ class AppointmentController extends Controller
             })
         ]);
     }
-    
 }

@@ -4,19 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Facades\HealthRecordFacade;
 use App\Facades\UserFacade;
-use App\Factories\AdminUserFactory;
-use App\Factories\NormalUserFactory;
-use App\Factories\StaffUserFactory;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserRegistrationValidationStrategy;
 use Illuminate\Http\Request;
 
+/**
+ * RegistrationController handles the registration of different types of users.
+ */
 class RegistrationController extends Controller
 {
+    /**
+     * @var ValidatorContext
+     */
     protected $registrationValidatorContext;
+
+    /**
+     * @var UserFacade
+     */
     protected $userFacade;
+
+    /**
+     * @var HealthRecordFacade
+     */
     protected $healthRecordFacade;
 
+    /**
+     * RegistrationController constructor.
+     *
+     * @param UserFacade $userFacade
+     * @param HealthRecordFacade $healthRecordFacade
+     */
     public function __construct(UserFacade $userFacade, HealthRecordFacade $healthRecordFacade)
     {
         $this->registrationValidatorContext = new ValidatorContext();
@@ -25,7 +42,12 @@ class RegistrationController extends Controller
         $this->healthRecordFacade = $healthRecordFacade;
     }
 
-    // Regular user registration
+    /**
+     * Register a regular user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function registerUser(Request $request)
     {
         $validationResult = $this->registrationValidatorContext->validate($request);
@@ -34,11 +56,9 @@ class RegistrationController extends Controller
             return response()->json(['error' => $validationResult['errors']], 400);
         }
 
-        // Facade create normal user
         $data = array_merge($request->all(), ['organization_id' => 1]);
         $user = $this->userFacade->createUser($data, 'user');
 
-        // Facade create health record
         $this->healthRecordFacade->createHealthRecordForUser($user->id);
 
         return response()->json([
@@ -47,7 +67,12 @@ class RegistrationController extends Controller
         ], 201);
     }
 
-    // Admin registration
+    /**
+     * Register an admin.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function registerAdmin(Request $request)
     {
         $validationResult = $this->registrationValidatorContext->validate($request);
@@ -56,7 +81,6 @@ class RegistrationController extends Controller
             return response()->json(['error' => $validationResult['errors']], 400);
         }
 
-        // Facade create ehealth admin
         $data = array_merge($request->all(), ['organization_id' => 1]);
         $admin = $this->userFacade->createUser($data, 'admin');
 
@@ -66,7 +90,12 @@ class RegistrationController extends Controller
         ], 201);
     }
 
-    // Staff registration
+    /**
+     * Register a staff member.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function registerStaff(Request $request)
     {
         $validationResult = $this->registrationValidatorContext->validate($request);
@@ -77,7 +106,6 @@ class RegistrationController extends Controller
 
         $staff = $this->userFacade->createUser($request->all(), 'staff');
 
-        // Facade create health record
         $this->healthRecordFacade->createHealthRecordForUser($staff->id);
 
         return response()->json([

@@ -2,8 +2,21 @@
 
 namespace App\Services\UserStatusValidation;
 
+use Illuminate\Http\JsonResponse;
+
+/**
+ * Class PendingAccountStrategy
+ *
+ * @package App\Services\UserStatusValidation
+ */
 class PendingAccountStrategy implements UserStatusStrategyInterface
 {
+    /**
+     * Validate the user's status.
+     *
+     * @param $user
+     * @return JsonResponse|null
+     */
     public function validate($user)
     {
         if ($user && $user->status === 'pending') {

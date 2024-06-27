@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\PurchaseRecord;
 use App\Models\Organization;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
+/**
+ * PurchaseController handles all operations related to purchase records.
+ */
 class PurchaseController extends Controller
 {
-    // Get all purchase records that are made from the same organization
+    /**
+     * Get all purchase records that are made from the same organization.
+     *
+     * @param int $organizationId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAllPurchasesByOrganization($organizationId)
     {
         $purchases = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
@@ -24,7 +31,12 @@ class PurchaseController extends Controller
         return response()->json($purchases);
     }
 
-    // Create purchase record
+    /**
+     * Create a new purchase record.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createPurchaseRecord(Request $request)
     {
         $request->validate([
@@ -44,7 +56,12 @@ class PurchaseController extends Controller
         ], 201);
     }
 
-    // Delete purchase record
+    /**
+     * Delete a specific purchase record by its ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function deletePurchaseRecord($id)
     {
         $purchase = PurchaseRecord::find($id);
@@ -58,6 +75,12 @@ class PurchaseController extends Controller
         return response()->json(['message' => 'Purchase record deleted successfully'], 200);
     }
 
+    /**
+     * Get purchase statistics for a specific organization.
+     *
+     * @param int $organizationId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getPurchaseStatistics($organizationId)
     {
         $organization = Organization::find($organizationId);
@@ -66,22 +89,18 @@ class PurchaseController extends Controller
             return response()->json(['error' => 'Organization not found'], 404);
         }
     
-        // Total purchase records made
         $totalPurchases = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->count();
     
-        // Total sales made by organization
         $totalSales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->sum('total_payment');
     
-        // Total sales made today by organization
         $todaySales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->whereDate('date_purchase', Carbon::today())->sum('total_payment');
     
-        // Sales data grouped by date for the past month (Line Chart)
         $startDate = Carbon::now()->subMonth();
         $dailySales = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
@@ -91,7 +110,6 @@ class PurchaseController extends Controller
             ->orderBy('date')
             ->get();
     
-        // Sales by medication (Bar Chart)
         $salesByMedication = PurchaseRecord::whereHas('pharmacist', function ($query) use ($organizationId) {
             $query->where('organization_id', $organizationId);
         })->selectRaw('medication_id, SUM(total_payment) as total_sales')

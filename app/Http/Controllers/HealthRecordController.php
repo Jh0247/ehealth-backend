@@ -7,17 +7,39 @@ use App\Models\User;
 use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
 use Illuminate\Http\Request;
 
+/**
+ * HealthRecordController handles all operations related to health records.
+ */
 class HealthRecordController extends Controller
 {
+    /**
+     * @var HealthRecordRepositoryInterface
+     */
     protected $healthRecordRepository;
+
+    /**
+     * @var HealthRecordFacade
+     */
     protected $healthRecordFacade;
 
+    /**
+     * HealthRecordController constructor.
+     *
+     * @param HealthRecordRepositoryInterface $healthRecordRepository
+     * @param HealthRecordFacade $healthRecordFacade
+     */
     public function __construct(HealthRecordRepositoryInterface $healthRecordRepository, HealthRecordFacade $healthRecordFacade)
     {
         $this->healthRecordRepository = $healthRecordRepository;
         $this->healthRecordFacade = $healthRecordFacade;
     }
 
+    /**
+     * Get the health record of the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUserHealthRecord(Request $request)
     {
         $user = $request->user;
@@ -40,6 +62,12 @@ class HealthRecordController extends Controller
         return response()->json($response);
     }
 
+    /**
+     * Get the health record of a specific user by user ID.
+     *
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getSpecificUserHealthRecord($userId)
     {
         $user = User::find($userId);
@@ -66,6 +94,13 @@ class HealthRecordController extends Controller
         return response()->json($response);
     }
 
+    /**
+     * Update the health record of a specific user by health record ID.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateHealthRecord(Request $request, $id)
     {
         $request->validate([
@@ -112,5 +147,4 @@ class HealthRecordController extends Controller
 
         return response()->json($response);
     }
-    
 }

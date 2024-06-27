@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Medication;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * MedicationController handles all operations related to medications.
+ */
 class MedicationController extends Controller
 {
+    /**
+     * Get the list of medications for the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getUserMedications(Request $request)
     {
         $user = $request->user();
@@ -34,6 +42,12 @@ class MedicationController extends Controller
         return response()->json($sortedPrescriptions);
     }
 
+    /**
+     * Get the list of medications for a specific user by user ID.
+     *
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getSpecificUserMedications($userId)
     {
         $user = User::find($userId);
@@ -63,12 +77,23 @@ class MedicationController extends Controller
         return response()->json($sortedPrescriptions);
     }
 
+    /**
+     * Get all medications.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAllMedications()
     {
         $medications = Medication::all();
         return response()->json($medications);
     }
 
+    /**
+     * Get details of a specific medication by medication ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getMedicationDetails($id)
     {
         $medication = Medication::find($id);
@@ -80,6 +105,12 @@ class MedicationController extends Controller
         return response()->json($medication);
     }
 
+    /**
+     * Create a new medication.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createMedication(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -102,6 +133,13 @@ class MedicationController extends Controller
         return response()->json(['message' => 'Medication created successfully', 'medication' => $medication], 201);
     }
 
+    /**
+     * Update details of a specific medication by medication ID.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateMedication(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [

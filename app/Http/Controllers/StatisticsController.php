@@ -10,8 +10,17 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * StatisticsController handles various statistical data retrievals.
+ */
 class StatisticsController extends Controller
 {
+    /**
+     * Get the number of user registrations grouped by date.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function userRegistrations(Request $request)
     {
         $registrations = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
@@ -22,6 +31,12 @@ class StatisticsController extends Controller
         return response()->json($registrations);
     }
 
+    /**
+     * Get the count of blogposts grouped by their status.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function blogpostStatus(Request $request)
     {
         $statuses = Blogpost::select('status', DB::raw('count(*) as count'))
@@ -31,6 +46,12 @@ class StatisticsController extends Controller
         return response()->json($statuses);
     }
 
+    /**
+     * Get the count of appointments grouped by their type.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function appointmentsByType(Request $request)
     {
         $types = Appointment::select('type', DB::raw('count(*) as count'))
@@ -40,6 +61,12 @@ class StatisticsController extends Controller
         return response()->json($types);
     }
 
+    /**
+     * Get the total sales over time grouped by date.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function salesOverTime(Request $request)
     {
         $sales = PurchaseRecord::select(DB::raw('DATE(date_purchase) as date'), DB::raw('sum(total_payment) as total'))
@@ -50,6 +77,12 @@ class StatisticsController extends Controller
         return response()->json($sales);
     }
 
+    /**
+     * Get the total quantity of medications sold grouped by medication.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function medicationsSold(Request $request)
     {
         $medications = PurchaseRecord::select('medication_id', DB::raw('sum(quantity) as total_sold'))
@@ -67,6 +100,12 @@ class StatisticsController extends Controller
         return response()->json($medications);
     }
 
+    /**
+     * Get the statistics for a specific organization.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function organizationStats($id)
     {
         $organization = Organization::find($id);
@@ -75,13 +114,8 @@ class StatisticsController extends Controller
             return response()->json(['error' => 'Organization not found'], 404);
         }
 
-        // Number of staff in the organization
         $numStaffs = $organization->users()->count();
-
-        // Number of appointments in the organization
         $numAppointments = $organization->appointments()->count();
-
-        // Number of blog posts created by users in the organization
         $numBlogposts = $organization->users()->withCount('blogposts')->get()->sum('blogposts_count');
 
         return response()->json([

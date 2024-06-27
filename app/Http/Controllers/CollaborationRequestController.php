@@ -9,21 +9,40 @@ use App\Models\User;
 use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
 
+/**
+ * CollaborationRequestController handles operations related to collaboration requests.
+ */
 class CollaborationRequestController extends Controller
 {
+    /**
+     * @var UserRepositoryInterface
+     */
     protected $userRepository;
 
+    /**
+     * @var HealthRecordFacade
+     */
     protected $healthRecordFacade;
 
-    protected $healthRecordRepository;
-    protected $healthRecordBuilder;
-
+    /**
+     * CollaborationRequestController constructor.
+     *
+     * @param UserRepositoryInterface $userRepository
+     * @param HealthRecordFacade $healthRecordFacade
+     */
     public function __construct(UserRepositoryInterface $userRepository, HealthRecordFacade $healthRecordFacade)
     {
         $this->userRepository = $userRepository;
         $this->healthRecordFacade = $healthRecordFacade;
     }
 
+    /**
+     * Approve a collaboration request for a specific user.
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function approveRequest(Request $request, $userId)
     {
         $user = $this->userRepository->find($userId);
@@ -41,6 +60,13 @@ class CollaborationRequestController extends Controller
         return response()->json(['message' => 'Collaboration request approved successfully', 'user' => $user], 200);
     }
 
+    /**
+     * Decline a collaboration request for a specific user.
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function declineRequest(Request $request, $userId)
     {
         $user = $this->userRepository->find($userId);
@@ -55,6 +81,12 @@ class CollaborationRequestController extends Controller
         return response()->json(['message' => 'Collaboration request declined successfully', 'user' => $user], 200);
     }
 
+    /**
+     * Stop collaboration for a specific organization.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function stopCollaboration(Request $request)
     {
         $request->validate([
@@ -76,6 +108,11 @@ class CollaborationRequestController extends Controller
         return response()->json(['message' => 'Collaboration stopped successfully, all users and blogposts have been terminated']);
     }
 
+    /**
+     * Get all collaboration requests for organizations with pending users.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getCollaborationRequests()
     {
         $organizations = Organization::whereHas('users', function ($query) {
@@ -87,6 +124,12 @@ class CollaborationRequestController extends Controller
         return response()->json($organizations);
     }
 
+    /**
+     * Re-collaborate an organization by activating the first admin.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function recollaborate(Request $request)
     {
         $request->validate([
