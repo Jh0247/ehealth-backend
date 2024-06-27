@@ -41,4 +41,12 @@ interface UserRepositoryInterface
      * @return \App\Models\User|null
      */
     public function delete($id);
+
+    /**
+     * Find users by organization ID.
+     *
+     * @param int $organizationId
+     * @return \Illuminate\Support\Collection
+     */
+    public function findByOrganization($organizationId);
 }

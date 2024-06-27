@@ -65,4 +65,15 @@ class UserRepository implements UserRepositoryInterface
         }
         return null;
     }
+
+    /**
+     * Find users by organization ID.
+     *
+     * @param int $organizationId
+     * @return \Illuminate\Support\Collection
+     */
+    public function findByOrganization($organizationId)
+    {
+        return User::where('organization_id', $organizationId)->get();
+    }
 }

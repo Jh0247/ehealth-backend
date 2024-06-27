@@ -103,4 +103,29 @@ class UserFacade
     {
         return $this->userRepository->find($userId);
     }
+
+    /**
+     * Find users by organization ID.
+     *
+     * @param int $organizationId
+     * @return \Illuminate\Support\Collection
+     */
+    public function findUsersByOrganization($organizationId)
+    {
+        return $this->userRepository->findByOrganization($organizationId);
+    }
+
+    /**
+     * Find the first admin of an organization.
+     *
+     * @param int $organizationId
+     * @return User|null
+     */
+    public function findFirstAdmin($organizationId)
+    {
+        return User::where('organization_id', $organizationId)
+            ->where('user_role', 'admin')
+            ->orderBy('created_at', 'asc')
+            ->first();
+    }
 }

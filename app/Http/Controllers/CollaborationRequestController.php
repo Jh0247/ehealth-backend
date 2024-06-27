@@ -6,8 +6,6 @@ use App\Facades\HealthRecordFacade;
 use App\Facades\UserFacade;
 use App\Models\Blogpost;
 use App\Models\Organization;
-use App\Models\User;
-use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
 
 /**
@@ -15,11 +13,6 @@ use Illuminate\Http\Request;
  */
 class CollaborationRequestController extends Controller
 {
-    /**
-     * @var UserRepositoryInterface
-     */
-    protected $userRepository;
-
     /**
      * @var HealthRecordFacade
      */
@@ -33,13 +26,11 @@ class CollaborationRequestController extends Controller
     /**
      * CollaborationRequestController constructor.
      *
-     * @param UserRepositoryInterface $userRepository
      * @param HealthRecordFacade $healthRecordFacade
      * @param UserFacade $userFacade
      */
-    public function __construct(UserRepositoryInterface $userRepository, HealthRecordFacade $healthRecordFacade, UserFacade $userFacade)
+    public function __construct(HealthRecordFacade $healthRecordFacade, UserFacade $userFacade)
     {
-        $this->userRepository = $userRepository;
         $this->healthRecordFacade = $healthRecordFacade;
         $this->userFacade = $userFacade;
     }
@@ -102,7 +93,7 @@ class CollaborationRequestController extends Controller
         $organizationId = $request->input('organization_id');
 
         // Update all users' status in the organization to 'terminated'
-        $users = User::where('organization_id', $organizationId)->get();
+        $users = $this->userFacade->findUsersByOrganization($organizationId);
         foreach ($users as $user) {
             $this->userFacade->updateUser($user->id, ['status' => 'terminated']);
 
@@ -144,10 +135,7 @@ class CollaborationRequestController extends Controller
         $organizationId = $request->input('organization_id');
 
         // Find the first admin of the organization
-        $firstAdmin = User::where('organization_id', $organizationId)
-            ->where('user_role', 'admin')
-            ->orderBy('created_at', 'asc')
-            ->first();
+        $firstAdmin = $this->userFacade->findFirstAdmin($organizationId);
 
         if (!$firstAdmin) {
             return response()->json(['error' => 'Admin not found for this organization'], 404);
