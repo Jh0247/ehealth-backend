@@ -4,14 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Medication;
 use App\Models\User;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\CreateMedicationValidationStrategy;
+use App\Services\Validation\UpdateMedicationValidationStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * MedicationController handles all operations related to medications.
  */
 class MedicationController extends Controller
 {
+    /**
+     * @var ValidatorContext
+     */
+    protected $validatorContext;
+
+    public function __construct()
+    {
+        $this->validatorContext = new ValidatorContext();
+    }
+
     /**
      * Get the list of medications for the authenticated user.
      *
@@ -113,19 +125,11 @@ class MedicationController extends Controller
      */
     public function createMedication(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'ingredient' => 'required|string',
-            'form' => 'required|string|max:255',
-            'usage' => 'required|string',
-            'strength' => 'required|string|max:255',
-            'manufacturer' => 'required|string|max:255',
-            'price' => 'required|numeric',
-        ]);
+        $this->validatorContext->addStrategy(new CreateMedicationValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 422);
         }
 
         $medication = Medication::create($request->all());
@@ -142,19 +146,11 @@ class MedicationController extends Controller
      */
     public function updateMedication(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'ingredient' => 'sometimes|required|string',
-            'form' => 'sometimes|required|string|max:255',
-            'usage' => 'sometimes|required|string',
-            'strength' => 'sometimes|required|string|max:255',
-            'manufacturer' => 'sometimes|required|string|max:255',
-            'price' => 'sometimes|required|numeric',
-        ]);
+        $this->validatorContext->addStrategy(new UpdateMedicationValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 422);
         }
 
         $medication = Medication::find($id);

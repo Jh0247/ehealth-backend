@@ -2,16 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\PurchaseRecord;
 use App\Models\Organization;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\PurchaseRecordCreationValidationStrategy;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 /**
  * PurchaseController handles all operations related to purchase records.
  */
 class PurchaseController extends Controller
 {
+    /**
+     * @var ValidatorContext
+     */
+    protected $purchaseValidatorContext;
+
+    /**
+     * PurchaseController constructor.
+     */
+    public function __construct()
+    {
+        $this->purchaseValidatorContext = new ValidatorContext();
+        $this->purchaseValidatorContext->addStrategy(new PurchaseRecordCreationValidationStrategy());
+    }
+
     /**
      * Get all purchase records that are made from the same organization.
      *
@@ -39,14 +55,11 @@ class PurchaseController extends Controller
      */
     public function createPurchaseRecord(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'pharmacist_id' => 'required|exists:users,id',
-            'medication_id' => 'required|exists:medications,id',
-            'date_purchase' => 'required|date',
-            'quantity' => 'required|integer',
-            'total_payment' => 'required|numeric',
-        ]);
+        $validationResult = $this->purchaseValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json($validationResult['errors'], 422);
+        }
 
         $purchase = PurchaseRecord::create($request->all());
 

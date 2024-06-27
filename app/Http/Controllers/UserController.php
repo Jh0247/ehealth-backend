@@ -6,10 +6,12 @@ use App\Facades\UserFacade;
 use App\Models\User;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\UserProfileUpdateValidationStrategy;
+use App\Services\Validation\UserStatusUpdateValidationStrategy;
+use App\Services\Validation\UserPasswordUpdateValidationStrategy;
+use App\Services\Validation\UserSearchByIcnoValidationStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 
 /**
  * UserController handles all operations related to user management.
@@ -20,6 +22,21 @@ class UserController extends Controller
      * @var ValidatorContext
      */
     protected $profileUpdateValidatorContext;
+
+    /**
+     * @var ValidatorContext
+     */
+    protected $statusUpdateValidatorContext;
+
+    /**
+     * @var ValidatorContext
+     */
+    protected $passwordUpdateValidatorContext;
+
+    /**
+     * @var ValidatorContext
+     */
+    protected $searchByIcnoValidatorContext;
 
     /**
      * @var UserFacade
@@ -35,6 +52,16 @@ class UserController extends Controller
     {
         $this->profileUpdateValidatorContext = new ValidatorContext();
         $this->profileUpdateValidatorContext->addStrategy(new UserProfileUpdateValidationStrategy());
+
+        $this->statusUpdateValidatorContext = new ValidatorContext();
+        $this->statusUpdateValidatorContext->addStrategy(new UserStatusUpdateValidationStrategy());
+
+        $this->passwordUpdateValidatorContext = new ValidatorContext();
+        $this->passwordUpdateValidatorContext->addStrategy(new UserPasswordUpdateValidationStrategy());
+
+        $this->searchByIcnoValidatorContext = new ValidatorContext();
+        $this->searchByIcnoValidatorContext->addStrategy(new UserSearchByIcnoValidationStrategy());
+
         $this->userFacade = $userFacade;
     }
 
@@ -123,13 +150,10 @@ class UserController extends Controller
      */
     public function updateUserStatus(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'status' => 'required|string|in:pending,active,terminated',
-        ]);
+        $validationResult = $this->statusUpdateValidatorContext->validate($request);
 
-        if ($validator->fails()) {
-            $errors = $validator->errors()->all();
-            return response()->json(['errors' => implode(' ', $errors)], 422);
+        if ($validationResult['errors']) {
+            return response()->json(['errors' => implode(' ', $validationResult['errors'])], 422);
         }
 
         $this->userFacade->updateUser($id, ['status' => $request->status]);
@@ -145,19 +169,21 @@ class UserController extends Controller
      */
     public function searchUserByIcno(Request $request)
     {
-        $request->validate([
-            'icno' => 'required|string',
-        ]);
-    
+        $validationResult = $this->searchByIcnoValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json($validationResult['errors'], 422);
+        }
+
         $icno = $request->input('icno');
         $users = User::where('icno', 'like', '%' . $icno . '%')
             ->where('user_role', 'user')
             ->get();
-    
+
         if ($users->isEmpty()) {
             return response()->json(['message' => 'No users found with the provided IC number'], 404);
         }
-    
+
         return response()->json($users);
     }
 
@@ -169,16 +195,13 @@ class UserController extends Controller
      */
     public function updatePassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'current_password' => 'required|string',
-            'new_password' => 'required|string|min:8|confirmed',
-        ]);
+        $validationResult = $this->passwordUpdateValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json($validationResult['errors'], 422);
+        }
 
         $user = $request->user();
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['error' => 'Current password is incorrect'], 403);

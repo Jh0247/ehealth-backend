@@ -6,6 +6,8 @@ use App\Facades\HealthRecordFacade;
 use App\Facades\UserFacade;
 use App\Models\Blogpost;
 use App\Models\Organization;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\OrganizationIdValidationStrategy;
 use Illuminate\Http\Request;
 
 /**
@@ -24,6 +26,11 @@ class CollaborationRequestController extends Controller
     protected $userFacade;
 
     /**
+     * @var ValidatorContext
+     */
+    protected $organizationIdValidatorContext;
+
+    /**
      * CollaborationRequestController constructor.
      *
      * @param HealthRecordFacade $healthRecordFacade
@@ -33,6 +40,9 @@ class CollaborationRequestController extends Controller
     {
         $this->healthRecordFacade = $healthRecordFacade;
         $this->userFacade = $userFacade;
+
+        $this->organizationIdValidatorContext = new ValidatorContext();
+        $this->organizationIdValidatorContext->addStrategy(new OrganizationIdValidationStrategy());
     }
 
     /**
@@ -86,9 +96,11 @@ class CollaborationRequestController extends Controller
      */
     public function stopCollaboration(Request $request)
     {
-        $request->validate([
-            'organization_id' => 'required|exists:organizations,id'
-        ]);
+        $validationResult = $this->organizationIdValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 422);
+        }
 
         $organizationId = $request->input('organization_id');
 
@@ -128,9 +140,11 @@ class CollaborationRequestController extends Controller
      */
     public function recollaborate(Request $request)
     {
-        $request->validate([
-            'organization_id' => 'required|exists:organizations,id'
-        ]);
+        $validationResult = $this->organizationIdValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 422);
+        }
 
         $organizationId = $request->input('organization_id');
 

@@ -7,10 +7,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Prescription;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\BookAppointmentValidationStrategy;
+use App\Services\Validation\UpdateAppointmentWithPrescriptionsValidationStrategy;
+use App\Services\Validation\UpdateAppointmentStatusValidationStrategy;
+use App\Services\Validation\AdminBookAppointmentValidationStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AppointmentController extends Controller {
+
+    /**
+     * @var ValidatorContext
+     */
+    protected $validatorContext;
+
+    public function __construct() {
+        $this->validatorContext = new ValidatorContext();
+    }
 
     /**
      * Get the list of appointments for the authenticated user.
@@ -52,13 +66,12 @@ class AppointmentController extends Controller {
      * Book a new appointment.
      */
     public function bookAppointment(Request $request) {
-        $request->validate([
-            'doctor_id' => 'required|exists:users,id',
-            'organization_id' => 'required|exists:organizations,id',
-            'appointment_datetime' => 'required|date',
-            'type' => 'required|string',
-            'purpose' => 'nullable|string',
-        ]);
+        $this->validatorContext->addStrategy(new BookAppointmentValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 400);
+        }
 
         $appointment = Appointment::create([
             'user_id' => Auth::id(),
@@ -133,15 +146,12 @@ class AppointmentController extends Controller {
      * Update an appointment and its prescriptions.
      */
     public function updateAppointmentWithPrescriptions(Request $request, $id) {
-        $request->validate([
-            'duration' => 'nullable|integer',
-            'note' => 'nullable|string',
-            'prescriptions' => 'required|array|min:1',
-            'prescriptions.*.medication_id' => 'required|exists:medications,id',
-            'prescriptions.*.dosage' => 'required|string',
-            'prescriptions.*.frequency' => 'required|string',
-            'prescriptions.*.duration' => 'required|integer',
-        ]);
+        $this->validatorContext->addStrategy(new UpdateAppointmentWithPrescriptionsValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 400);
+        }
 
         $appointment = Appointment::find($id);
 
@@ -188,9 +198,12 @@ class AppointmentController extends Controller {
      * Update the status of an appointment.
      */
     public function updateAppointmentStatus(Request $request, $id) {
-        $request->validate([
-            'status' => 'required|string',
-        ]);
+        $this->validatorContext->addStrategy(new UpdateAppointmentStatusValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 400);
+        }
 
         $appointment = Appointment::find($id);
 
@@ -211,14 +224,12 @@ class AppointmentController extends Controller {
      * Book an appointment as an admin for a user.
      */
     public function adminBookAppointment(Request $request) {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'doctor_id' => 'required|exists:users,id',
-            'organization_id' => 'required|exists:organizations,id',
-            'appointment_datetime' => 'required|date',
-            'type' => 'required|string',
-            'purpose' => 'nullable|string',
-        ]);
+        $this->validatorContext->addStrategy(new AdminBookAppointmentValidationStrategy());
+        $validationResult = $this->validatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json(['error' => $validationResult['errors']], 400);
+        }
 
         $appointment = Appointment::create([
             'user_id' => $request->user_id,

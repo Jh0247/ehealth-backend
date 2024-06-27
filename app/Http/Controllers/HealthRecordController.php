@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Facades\HealthRecordFacade;
 use App\Models\User;
 use App\Repositories\HealthRecord\HealthRecordRepositoryInterface;
+use App\Services\Validation\ValidatorContext;
+use App\Services\Validation\HealthRecordUpdateValidationStrategy;
 use Illuminate\Http\Request;
 
 /**
@@ -23,6 +25,11 @@ class HealthRecordController extends Controller
     protected $healthRecordFacade;
 
     /**
+     * @var ValidatorContext
+     */
+    protected $healthRecordValidatorContext;
+
+    /**
      * HealthRecordController constructor.
      *
      * @param HealthRecordRepositoryInterface $healthRecordRepository
@@ -32,6 +39,8 @@ class HealthRecordController extends Controller
     {
         $this->healthRecordRepository = $healthRecordRepository;
         $this->healthRecordFacade = $healthRecordFacade;
+        $this->healthRecordValidatorContext = new ValidatorContext();
+        $this->healthRecordValidatorContext->addStrategy(new HealthRecordUpdateValidationStrategy());
     }
 
     /**
@@ -42,7 +51,7 @@ class HealthRecordController extends Controller
      */
     public function getUserHealthRecord(Request $request)
     {
-        $user = $request->user;
+        $user = $request->user();
 
         if (!$user) {
             return response()->json(['error' => 'User not found in request.'], 401);
@@ -103,12 +112,11 @@ class HealthRecordController extends Controller
      */
     public function updateHealthRecord(Request $request, $id)
     {
-        $request->validate([
-            'health_condition' => 'nullable|string|in:Healthy,Good,Fair,Poor',
-            'blood_type' => 'nullable|string|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'allergic' => 'nullable|array',
-            'diseases' => 'nullable|string',
-        ]);
+        $validationResult = $this->healthRecordValidatorContext->validate($request);
+
+        if ($validationResult['errors']) {
+            return response()->json($validationResult['errors'], 422);
+        }
     
         $allergic = $request->allergic ? json_encode($request->allergic) : null;
     
