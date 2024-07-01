@@ -17,11 +17,11 @@ return new class extends Migration
             $table->foreignId('doctor_id')->constrained('users');
             $table->foreignId('organization_id')->constrained('organizations');
             $table->timestamp('appointment_datetime');
-            $table->string('type');
-            $table->string('purpose')->nullable();
+            $table->string('type', 50);
+            $table->string('purpose', 255)->nullable();
             $table->integer('duration')->nullable();
             $table->text('note')->nullable();
-            $table->string('status');
+            $table->string('status', 50);
             $table->timestamps();
             $table->engine = 'InnoDB';
         });

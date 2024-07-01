@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('appointment_id')->constrained('appointments');
             $table->foreignId('medication_id')->constrained('medications');
-            $table->string('dosage');
-            $table->string('frequency');
-            $table->string('duration')->nullable();
+            $table->string('dosage', 255);
+            $table->string('frequency', 50);
+            $table->string('duration', 50)->nullable();
             $table->date('prescription_date');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('health_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->string('health_condition')->nullable();
-            $table->string('blood_type')->nullable();
-            $table->string('allergic')->nullable();
-            $table->string('diseases')->nullable();
+            $table->string('health_condition', 50)->nullable();
+            $table->string('blood_type', 3)->nullable();
+            $table->text('allergic')->nullable();
+            $table->text('diseases')->nullable();
             $table->timestamps();
             $table->engine = 'InnoDB';
         });

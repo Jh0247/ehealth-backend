@@ -27,7 +27,7 @@ class AdminUserFactory extends UserFactory
             'icno' => $data['icno'],
             'contact' => $data['contact'],
             'password' => Hash::make($data['password']),
-            'user_role' => 'admin',
+            'user_role' => 'e-admin',
             'status' => 'active',
         ]);
     }

@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Validation\ValidatorContext;
 use App\Services\Validation\EmailPasswordValidationStrategy;
 use App\Services\Validation\EmailExistsValidationStrategy;
-use App\Services\UserStatusValidation\NoAccountFoundStrategy;
-use App\Services\UserStatusValidation\PendingAccountStrategy;
-use App\Services\UserStatusValidation\TerminatedAccountStrategy;
+use App\Facades\UserFacade;
 use Illuminate\Http\Request;
 use App\Models\User;
 
@@ -25,26 +23,22 @@ class AuthController extends Controller
     protected $loginValidatorContext;
 
     /**
-     * @var array The array of user status validation strategies.
+     * @var UserFacade
      */
-    protected $statusValidatorContext;
+    protected $userFacade;
 
     /**
      * AuthController constructor.
      *
      * Initializes the validation strategies for login and user status.
      */
-    public function __construct()
+    public function __construct(UserFacade $userFacade)
     {
         $this->loginValidatorContext = new ValidatorContext();
         $this->loginValidatorContext->addStrategy(new EmailPasswordValidationStrategy());
         $this->loginValidatorContext->addStrategy(new EmailExistsValidationStrategy());
 
-        $this->statusValidatorContext = [
-            new NoAccountFoundStrategy(),
-            new PendingAccountStrategy(),
-            new TerminatedAccountStrategy()
-        ];
+        $this->userFacade = $userFacade;
     }
 
     /**
@@ -69,12 +63,10 @@ class AuthController extends Controller
         // Retrieve the user by email
         $user = User::where('email', $request->email)->first();
 
-        // Validate user status using predefined strategies
-        foreach ($this->statusValidatorContext as $strategy) {
-            $response = $strategy->validate($user);
-            if ($response !== null) {
-                return $response;
-            }
+        // Validate user status using UserFacade
+        $response = $this->userFacade->validateUserStatus($user);
+        if ($response !== null) {
+            return $response;
         }
 
         // Attempt to authenticate the user

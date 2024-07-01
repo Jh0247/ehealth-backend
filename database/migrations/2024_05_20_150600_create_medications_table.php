@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('medications', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name', 100);
             $table->text('description')->nullable();
             $table->text('ingredient')->nullable();
-            $table->string('form');
-            $table->string('usage')->nullable();
-            $table->string('strength')->nullable();
-            $table->string('manufacturer')->nullable();
+            $table->string('form', 50);
+            $table->string('usage', 255)->nullable();
+            $table->string('strength', 50)->nullable();
+            $table->string('manufacturer', 100)->nullable();
             $table->decimal('price', 8, 2);
             $table->timestamps();
             $table->engine = 'InnoDB';

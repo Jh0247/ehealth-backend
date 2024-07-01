@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('blogposts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->string('title');
+            $table->string('title', 255);
             $table->text('content');
             $table->string('banner')->nullable();
-            $table->string('status');
+            $table->string('status', 50);
             $table->timestamps();
             $table->engine = 'InnoDB';
         });

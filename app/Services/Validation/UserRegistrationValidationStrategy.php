@@ -25,7 +25,7 @@ class UserRegistrationValidationStrategy implements ValidationStrategyInterface
             'email' => 'required|string|email|max:100|unique:users',
             'icno' => 'required|string|between:12,14|unique:users',
             'contact' => 'required|string|between:10,15',
-            'password' => 'required|string|confirmed|min:6',
+            'password' => 'required|string|confirmed|min:8',
         ]);
 
         if ($validator->fails()) {

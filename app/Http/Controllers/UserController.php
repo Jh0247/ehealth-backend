@@ -81,7 +81,16 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        $data = $request->only(['name', 'email', 'contact']);
+        if ($request->has('name')) {
+            $user->name = $request->name;
+        }
+        if ($request->has('email')) {
+            $user->email = $request->email;
+        }
+        if ($request->has('contact')) {
+            $user->contact = $request->contact;
+        }
+
         if ($request->hasFile('profile_img')) {
             if ($user->profile_img) {
                 Storage::disk('s3')->delete($user->profile_img);
@@ -89,10 +98,10 @@ class UserController extends Controller
 
             $imagePath = $request->file('profile_img')->store('profile_images', 's3');
             Storage::url($imagePath);
-            $data['profile_img'] = env('APP_S3_URL') . '/ehealth/' . $imagePath;
+            $user->profile_img = env('APP_S3_URL') . '/ehealth/' . $imagePath;
         }
 
-        $this->userFacade->updateUser($user->id, $data);
+        $user->save();
         $user->load('organization');
 
         return response()->json([

@@ -8,6 +8,10 @@ use App\Factories\NormalUserFactory;
 use App\Factories\StaffUserFactory;
 use App\Factories\UserFactory;
 use App\Models\User;
+use App\Services\UserStatusValidation\NoAccountFoundStrategy;
+use App\Services\UserStatusValidation\PendingAccountStrategy;
+use App\Services\UserStatusValidation\TerminatedAccountStrategy;
+use App\Services\Validation\ValidatorContext;
 
 /**
  * Class UserFacade
@@ -22,6 +26,11 @@ class UserFacade
     protected $userRepository;
 
     /**
+     * @var array The array of user status validation strategies.
+     */
+    protected $statusValidatorContext;
+
+    /**
      * UserFacade constructor.
      *
      * @param UserRepositoryInterface $userRepository
@@ -29,6 +38,11 @@ class UserFacade
     public function __construct(UserRepositoryInterface $userRepository)
     {
         $this->userRepository = $userRepository;
+        $this->statusValidatorContext = [
+            new NoAccountFoundStrategy(),
+            new PendingAccountStrategy(),
+            new TerminatedAccountStrategy()
+        ];
     }
 
     /**
@@ -127,5 +141,22 @@ class UserFacade
             ->where('user_role', 'admin')
             ->orderBy('created_at', 'asc')
             ->first();
+    }
+
+    /**
+     * Validate the status of a user using predefined strategies.
+     *
+     * @param $user
+     * @return \Illuminate\Http\JsonResponse|null
+     */
+    public function validateUserStatus($user)
+    {
+        foreach ($this->statusValidatorContext as $strategy) {
+            $response = $strategy->validate($user);
+            if ($response !== null) {
+                return $response;
+            }
+        }
+        return null;
     }
 }

@@ -28,7 +28,7 @@ class OrganizationCreationValidationStrategy implements ValidationStrategyInterf
             'admin_email' => 'required|string|email|max:100|unique:users,email',
             'admin_contact' => 'required|string|between:10,15',
             'admin_icno' => 'required|string|between:12,14|unique:users,icno',
-            'password' => 'required|string|confirmed|min:6',
+            'password' => 'required|string|confirmed|min:8',
             'address' => 'required|string|max:255',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
