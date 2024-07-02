@@ -133,7 +133,7 @@ class AppointmentController extends Controller {
      * Get a list of appointments by organization with pagination.
      */
     public function getAppointmentsByOrganization(Request $request, $organizationId) {
-        $perPage = $request->input('per_page', 10);
+        $perPage = $request->input('per_page', 500);
         $appointments = Appointment::with('user')
             ->where('organization_id', $organizationId)
             ->orderBy('appointment_datetime', 'desc')
