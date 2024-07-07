@@ -31,7 +31,7 @@ class BlogpostController extends Controller
     {
         $this->validatorContext = new ValidatorContext();
         $this->s3 = new S3Client([
-            'region'  => env('AWS_DEFAULT_REGION'),
+            'region'  => env('AWS_DEFAULT_REGION', 'ap-southeast-2'),
             'version' => 'latest',
             'credentials' => [
                 'key'    => env('AWS_ACCESS_KEY_ID'),
