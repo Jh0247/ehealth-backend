@@ -105,6 +105,7 @@ class UserController extends Controller
                     'secret' => env('AWS_SECRET_ACCESS_KEY'),
                 ],
             ]);
+            Log::info(env('AWS_ACCESS_KEY_ID'));
     
             $file = $request->file('profile_img');
             $filePath = $file->getPathname();
