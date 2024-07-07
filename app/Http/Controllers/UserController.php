@@ -12,6 +12,9 @@ use App\Services\Validation\UserSearchByIcnoValidationStrategy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
 
 /**
  * UserController handles all operations related to user management.
@@ -74,13 +77,13 @@ class UserController extends Controller
     public function updateProfile(Request $request)
     {
         $validationResult = $this->profileUpdateValidatorContext->validate($request);
-
+    
         if ($validationResult['errors']) {
             return response()->json($validationResult['errors'], 422);
         }
-
+    
         $user = $request->user();
-
+    
         if ($request->has('name')) {
             $user->name = $request->name;
         }
@@ -90,20 +93,54 @@ class UserController extends Controller
         if ($request->has('contact')) {
             $user->contact = $request->contact;
         }
-
+    
         if ($request->hasFile('profile_img')) {
-            if ($user->profile_img) {
-                Storage::disk('s3')->delete($user->profile_img);
+            Log::info('Profile image file detected');
+    
+            $s3 = new S3Client([
+                'region'  => env('AWS_DEFAULT_REGION'),
+                'version' => 'latest',
+                'credentials' => [
+                    'key'    => env('AWS_ACCESS_KEY_ID'),
+                    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                ],
+            ]);
+    
+            $file = $request->file('profile_img');
+            $filePath = $file->getPathname();
+            $fileName = 'profile_images/' . uniqid() . '_' . $file->getClientOriginalName();
+            $bucket = env('AWS_BUCKET');
+    
+            try {
+                $result = $s3->putObject([
+                    'Bucket' => $bucket,
+                    'Key'    => $fileName,
+                    'SourceFile' => $filePath,
+                    'ACL'    => 'public-read',
+                ]);
+    
+                $imageUrl = $result['ObjectURL'];
+                Log::info('Image URL: ' . $imageUrl);
+    
+                // Delete the old image if it exists
+                if ($user->profile_img) {
+                    $oldImageKey = str_replace(env('APP_S3_URL') . '/', '', $user->profile_img);
+                    $s3->deleteObject([
+                        'Bucket' => $bucket,
+                        'Key'    => $oldImageKey,
+                    ]);
+                }
+    
+                $user->profile_img = $imageUrl;
+            } catch (AwsException $e) {
+                Log::error('AWS S3 Upload Error: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to upload image'], 500);
             }
-
-            $imagePath = $request->file('profile_img')->store('profile_images', 's3');
-            Storage::url($imagePath);
-            $user->profile_img = env('APP_S3_URL'). $imagePath;
         }
-
+    
         $user->save();
         $user->load('organization');
-
+    
         return response()->json([
             'message' => 'Profile updated successfully',
             'user' => $user

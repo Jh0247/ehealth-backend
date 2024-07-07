@@ -8,7 +8,9 @@ use App\Services\Validation\CreateBlogpostValidationStrategy;
 use App\Services\Validation\UpdateBlogpostValidationStrategy;
 use App\Services\Validation\UpdateBlogpostStatusValidationStrategy;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+use Illuminate\Support\Facades\Log;
 
 /**
  * BlogpostController handles all operations related to blogposts.
@@ -20,9 +22,22 @@ class BlogpostController extends Controller
      */
     protected $validatorContext;
 
+    /**
+     * @var S3Client
+     */
+    protected $s3;
+
     public function __construct()
     {
         $this->validatorContext = new ValidatorContext();
+        $this->s3 = new S3Client([
+            'region'  => env('AWS_DEFAULT_REGION'),
+            'version' => 'latest',
+            'credentials' => [
+                'key'    => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            ],
+        ]);
     }
 
     /**
@@ -44,9 +59,24 @@ class BlogpostController extends Controller
 
         $bannerPath = null;
         if ($request->hasFile('banner')) {
-            $bannerPath = $request->file('banner')->store('blog_banners', 's3');
-            Storage::url($bannerPath);
-            $bannerPath = env('APP_S3_URL'). $bannerPath;
+            try {
+                $file = $request->file('banner');
+                $filePath = $file->getPathname();
+                $fileName = 'blog_banners/' . uniqid() . '_' . $file->getClientOriginalName();
+                $bucket = env('AWS_BUCKET');
+
+                $result = $this->s3->putObject([
+                    'Bucket' => $bucket,
+                    'Key'    => $fileName,
+                    'SourceFile' => $filePath,
+                    'ACL'    => 'public-read',
+                ]);
+
+                $bannerPath = $result['ObjectURL'];
+            } catch (AwsException $e) {
+                Log::error('AWS S3 Upload Error: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to upload banner'], 500);
+            }
         }
 
         $blogpost = $user->blogposts()->create([
@@ -126,7 +156,10 @@ class BlogpostController extends Controller
 
         if ($blogpost->banner) {
             $bannerPath = str_replace(env('APP_S3_URL'), '', $blogpost->banner);
-            Storage::disk('s3')->delete($bannerPath);
+            $this->s3->deleteObject([
+                'Bucket' => env('AWS_BUCKET'),
+                'Key'    => $bannerPath,
+            ]);
         }
 
         $blogpost->delete();
@@ -190,16 +223,33 @@ class BlogpostController extends Controller
         }
     
         if ($request->hasFile('banner')) {
-            if ($blogpost->banner) {
-                $bannerPath = str_replace(env('APP_S3_URL'), '', $blogpost->banner);
-                Storage::disk('s3')->delete($bannerPath);
+            try {
+                if ($blogpost->banner) {
+                    $bannerPath = str_replace(env('APP_S3_URL'), '', $blogpost->banner);
+                    $this->s3->deleteObject([
+                        'Bucket' => env('AWS_BUCKET'),
+                        'Key'    => $bannerPath,
+                    ]);
+                }
+    
+                $file = $request->file('banner');
+                $filePath = $file->getPathname();
+                $fileName = 'blog_banners/' . uniqid() . '_' . $file->getClientOriginalName();
+                $bucket = env('AWS_BUCKET');
+
+                $result = $this->s3->putObject([
+                    'Bucket' => $bucket,
+                    'Key'    => $fileName,
+                    'SourceFile' => $filePath,
+                    'ACL'    => 'public-read',
+                ]);
+
+                $bannerPath = $result['ObjectURL'];
+                $blogpost->banner = $bannerPath;
+            } catch (AwsException $e) {
+                Log::error('AWS S3 Upload Error: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to upload banner'], 500);
             }
-    
-            $bannerPath = $request->file('banner')->store('blog_banners', 's3');
-            Storage::url($bannerPath);
-            $bannerPath = env('APP_S3_URL'). $bannerPath;
-    
-            $blogpost->banner = $bannerPath;
         }
     
         $blogpost->title = $request->input('title');
