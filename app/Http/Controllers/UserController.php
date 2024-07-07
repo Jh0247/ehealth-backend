@@ -98,7 +98,7 @@ class UserController extends Controller
 
             $imagePath = $request->file('profile_img')->store('profile_images', 's3');
             Storage::url($imagePath);
-            $user->profile_img = env('APP_S3_URL') . '/ehealth/' . $imagePath;
+            $user->profile_img = env('APP_S3_URL'). $imagePath;
         }
 
         $user->save();

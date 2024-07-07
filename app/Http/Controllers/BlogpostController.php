@@ -46,7 +46,7 @@ class BlogpostController extends Controller
         if ($request->hasFile('banner')) {
             $bannerPath = $request->file('banner')->store('blog_banners', 's3');
             Storage::url($bannerPath);
-            $bannerPath = env('APP_S3_URL') . '/ehealth/' . $bannerPath;
+            $bannerPath = env('APP_S3_URL'). $bannerPath;
         }
 
         $blogpost = $user->blogposts()->create([
@@ -76,7 +76,7 @@ class BlogpostController extends Controller
             $query->where('status', $request->status);
         }
     
-        $blogposts = $query->paginate(10);
+        $blogposts = $query->paginate(50);
     
         return response()->json($blogposts);
     }
@@ -125,7 +125,7 @@ class BlogpostController extends Controller
         }
 
         if ($blogpost->banner) {
-            $bannerPath = str_replace(env('APP_S3_URL') . '/ehealth/', '', $blogpost->banner);
+            $bannerPath = str_replace(env('APP_S3_URL'), '', $blogpost->banner);
             Storage::disk('s3')->delete($bannerPath);
         }
 
@@ -143,7 +143,7 @@ class BlogpostController extends Controller
      */
     public function searchBlogpostByName(Request $request, $name)
     {
-        $blogposts = Blogpost::where('title', 'like', '%' . $name . '%')->paginate(10);
+        $blogposts = Blogpost::where('title', 'like', '%' . $name . '%')->paginate(50);
 
         return response()->json($blogposts);
     }
@@ -191,13 +191,13 @@ class BlogpostController extends Controller
     
         if ($request->hasFile('banner')) {
             if ($blogpost->banner) {
-                $bannerPath = str_replace(env('APP_S3_URL') . '/ehealth/', '', $blogpost->banner);
+                $bannerPath = str_replace(env('APP_S3_URL'), '', $blogpost->banner);
                 Storage::disk('s3')->delete($bannerPath);
             }
     
             $bannerPath = $request->file('banner')->store('blog_banners', 's3');
             Storage::url($bannerPath);
-            $bannerPath = env('APP_S3_URL') . '/ehealth/' . $bannerPath;
+            $bannerPath = env('APP_S3_URL'). $bannerPath;
     
             $blogpost->banner = $bannerPath;
         }
@@ -223,7 +223,7 @@ class BlogpostController extends Controller
      */
     public function getBlogpostsByStatus(Request $request, $status)
     {
-        $blogposts = Blogpost::where('status', $status)->orderBy('created_at', 'desc')->paginate(10);
+        $blogposts = Blogpost::where('status', $status)->orderBy('created_at', 'desc')->paginate(50);
 
         return response()->json($blogposts);
     }
@@ -237,7 +237,7 @@ class BlogpostController extends Controller
     public function getUserBlogposts(Request $request)
     {
         $user = $request->user();
-        $blogposts = $user->blogposts()->orderBy('created_at', 'desc')->paginate(10);
+        $blogposts = $user->blogposts()->orderBy('created_at', 'desc')->paginate(50);
 
         return response()->json($blogposts);
     }
